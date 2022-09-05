@@ -1,10 +1,16 @@
 {
 	"name": "vscode-pydata-viewer",
 	"displayName": "vscode-pydata-viewer",
+	"description": "Display PyData files (.npz .npy .pkl .pth) in VSCode.",
+	"publisher": "Percy",
 	"description": "",
 	"version": "0.0.1",
 	"engines": {
 		"vscode": "^1.70.0"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/haochengxia/vscode-pydata-viewer.git"
 	},
 	"categories": [
 		"Other"
@@ -16,24 +22,24 @@
 	"contributes": {
 		"customEditors": [
 			{
-			  "viewType": "pydata.preview",
-			  "displayName": "Python Data Preview",
-			  "selector": [
-				{
-				  "filenamePattern": "*.npy"
-				},
-				{
-				  "filenamePattern": "*.npz"
-				},
-				{
-				  "filenamePattern": "*.pkl"
-				},
-				{
-				  "filenamePattern": "*.pth"
-				}
-			  ]
+				"viewType": "pydata.preview",
+				"displayName": "Python Data Preview",
+				"selector": [
+					{
+						"filenamePattern": "*.npy"
+					},
+					{
+						"filenamePattern": "*.npz"
+					},
+					{
+						"filenamePattern": "*.pkl"
+					},
+					{
+						"filenamePattern": "*.pth"
+					}
+				]
 			}
-		  ]
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
