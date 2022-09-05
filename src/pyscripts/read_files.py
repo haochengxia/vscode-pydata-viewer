@@ -21,6 +21,7 @@ if file_type == FileType.NUMPY.value:
             content = np.load(file_path, allow_pickle=True)
             integ_con = ''
             for f in content.files:
+                # TODO optim display logic
                 integ_con += '[' + ','.join(map(str, content[f])) + '] '
             print(integ_con)
         else:
@@ -37,7 +38,7 @@ elif file_type == FileType.PICKLE.value:
         print(content)
     except Exception as e:
         print(e)
-elif file_type == FileType.PICKLE.value:
+elif file_type == FileType.PYTORCH.value:
     # Solve pytorch files .pth
     try:
         import torch

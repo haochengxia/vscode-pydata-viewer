@@ -209,7 +209,7 @@ elif file_type == FileType.PICKLE.value:
         print(content)
     except Exception as e:
         print(e)
-elif file_type == FileType.PICKLE.value:
+elif file_type == FileType.PYTORCH.value:
     # Solve pytorch files .pth
     try:
         import torch

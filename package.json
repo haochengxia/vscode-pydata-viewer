@@ -3,7 +3,7 @@
 	"displayName": "vscode-pydata-viewer",
 	"description": "Display PyData files (.npz .npy .pkl .pth) in VSCode.",
 	"publisher": "Percy",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"engines": {
 		"vscode": "^1.70.0"
 	},
