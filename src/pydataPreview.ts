@@ -189,8 +189,15 @@ if file_type == FileType.NUMPY.value:
     # Solve numpy files .npy or .npz
     try:
         import numpy as np
-        content = np.load(sys.argv[1], allow_pickle=True)
-        print(content)
+        if file_path.endswith('npz'):
+            content = np.load(file_path, allow_pickle=True)
+            integ_con = ''
+            for f in content.files:
+                integ_con += '[' + ','.join(map(str, content[f])) + '] '
+            print(integ_con)
+        else:
+            content = np.load(file_path, allow_pickle=True)
+            print(content)
     except Exception as e:
         print(e)
 elif file_type == FileType.PICKLE.value:
