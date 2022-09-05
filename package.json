@@ -10,16 +10,30 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:vscode-pydata-viewer.helloWorld"
+		"onCustomEditor:pydata.preview"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
-		"commands": [
+		"customEditors": [
 			{
-				"command": "vscode-pydata-viewer.helloWorld",
-				"title": "Hello World"
+			  "viewType": "pydata.preview",
+			  "displayName": "Python Data Preview",
+			  "selector": [
+				{
+				  "filenamePattern": "*.npy"
+				},
+				{
+				  "filenamePattern": "*.npz"
+				},
+				{
+				  "filenamePattern": "*.pkl"
+				},
+				{
+				  "filenamePattern": "*.pth"
+				}
+			  ]
 			}
-		]
+		  ]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",

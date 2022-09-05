@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import { Disposable } from './disposable';
-import { OSUtils, getPythonPath, isLargerThanOne, toCLikeArray, toMultiDimArray, show2DArr, multiArrayToString, wrapWithSqBr } from './utils';
+import { OSUtils } from './utils';
 import {Options, PythonShell} from 'python-shell';
 
 type PreviewState = 'Disposed' | 'Visible' | 'Active';
@@ -77,7 +77,7 @@ export class PyDataPreview extends Disposable {
       })
     );
 
-    this.webviewEditor.webview.html = PyDataPreview.getWebviewContents(this.resource.path, false);
+    this.getWebviewContents(this.resource.path);
     this.update();
   }
 
@@ -99,7 +99,7 @@ export class PyDataPreview extends Disposable {
     this._previewState = 'Visible';
   }
 
-  public static getWebviewContents(resourcePath : string, tableViewFlag : boolean, tableCss=''): string {
+  public getWebviewContents(resourcePath : string) {
     var path = resourcePath;
     switch (OSUtils.isWindows()) {
       case true: 
@@ -111,30 +111,56 @@ export class PyDataPreview extends Disposable {
     }
     // extract the suffix
     const fileSuffix = path.toString().split('.').at(-1);
-    const ft : FileType = this.suffixToType(fileSuffix as string);
+    const ft : FileType = PyDataPreview.suffixToType(fileSuffix as string);
+    console.log('[*] File type is: ', ft);
 
-    const content = callPythonToRead(ft, path);
-
-    // Introduce css file
-    var resourceLink = '';
-    if (tableCss !== '') {
-      resourceLink = `<link rel="stylesheet" href="${tableCss}">`;
-    }
+    // Call python
+    console.log('starting python....');
+    const pythonPath = PythonShell.defaultPythonPath;
+    console.log('default python path', pythonPath);
+    let options : Options = {
+        mode: 'text',
+        pythonPath: pythonPath,
+        pythonOptions: ['-u'],
+        // scriptPath: __dirname + '/pyscripts/',
+        args: [ft.toString(), path]
+    };
+    
+    const handle = this;
+    var content : string = 'init';
+    PythonShell.runString(read_files_script, 
+      options, function (err, results) {
+        if (err) {console.log(err);}
+        // results is an array consisting of messages collected during execution
+        console.log('results: %j', results);
+        var r = results as Array<string>;
+        content = r.toString();
+        const head = `<!DOCTYPE html>
+        <html dir="ltr" mozdisallowselectionprint>
+        <head>
+        <meta charset="utf-8">
+        </head>`;
+        const tail = ['</html>'].join('\n');
+        const output =  head + `<body>              
+        <div id="x">` + content + `</div></body>` + tail;
+        console.log(output);
+        handle.webviewEditor.webview.html = output;
+        handle.update();
+    });
 
     // Replace , with ,\n for reading
     // var re = /,/gi;
     // content = content.replace(re, `,\n`);
-    const head = `<!DOCTYPE html>
-    <html dir="ltr" mozdisallowselectionprint>
-    <head>
-    <meta charset="utf-8">
-    ${resourceLink}
-    </head>`;
-    const tail = ['</html>'].join('\n');
-    const output =  head + `<body>              
-    <div id="x">` + content + `</div></body>` + tail;
-    console.log(output);
-    return output;
+    // const head = `<!DOCTYPE html>
+    // <html dir="ltr" mozdisallowselectionprint>
+    // <head>
+    // <meta charset="utf-8">
+    // </head>`;
+    // const tail = ['</html>'].join('\n');
+    // const output =  head + `<body>              
+    // <div id="x">` + content + `</div></body>` + tail;
+    // console.log(output);
+    // return output;
   }
 
   public static suffixToType(suffix : string) {
@@ -148,24 +174,42 @@ export class PyDataPreview extends Disposable {
   }
 }
 
+const read_files_script =
+`
+import sys;
+file_type = int(sys.argv[1])
+file_path = sys.argv[2]
 
-async function callPythonToRead(fileType: FileType, filePath : string) : Promise<any> {
-    const pythonPath = await getPythonPath();
-    let options : Options = {
-        mode: 'text',
-        pythonPath: pythonPath,
-        pythonOptions: ['-u'],
-        scriptPath: './pyscripts',
-        args: [fileType.toString(), filePath]
-    };
-    
-    var content;
-
-    PythonShell.run('read_files.py', options, function (err, results) {
-        if (err) {throw err;}
-        // results is an array consisting of messages collected during execution
-        console.log('results: %j', results);
-        content = results;
-    });
-    return content;
-}
+from enum import Enum
+class FileType(Enum):
+    NUMPY = 0
+    PICKLE = 1
+    PYTORCH = 2
+if file_type == FileType.NUMPY.value:
+    # Solve numpy files .npy or .npz
+    try:
+        import numpy as np
+        content = np.load(sys.argv[1], allow_pickle=True)
+        print(content)
+    except Exception as e:
+        print(e)
+elif file_type == FileType.PICKLE.value:
+    # Solve pickle files .pkl
+    try:
+        import pickle
+        f = open(file_path, 'rb')
+        content = pickle.load(f)
+        print(content)
+    except Exception as e:
+        print(e)
+elif file_type == FileType.PICKLE.value:
+    # Solve pytorch files .pth
+    try:
+        import torch
+        content = torch.load(file_path)
+        print(content)
+    except Exception as e:
+        print(e)
+else:
+    print('Unsupport file type.')
+`;
