@@ -134,7 +134,7 @@ export class PyDataPreview extends Disposable {
         // results is an array consisting of messages collected during execution
         console.log('results: %j', results);
         var r = results as Array<string>;
-        content = r.toString();
+        content = r.join('<br>');
         const head = `<!DOCTYPE html>
         <html dir="ltr" mozdisallowselectionprint>
         <head>
@@ -185,19 +185,37 @@ class FileType(Enum):
     NUMPY = 0
     PICKLE = 1
     PYTORCH = 2
+def print_ndarray(array):
+    if array.dtype==np.dtype('O'):
+        array = array.item()
+        if isinstance(array, dict):
+            print('{')
+            for k, v in array.items():
+                print("'<b><i>{}</i></b>':".format(k))
+                if isinstance(v, np.ndarray):
+                    print("<b><i>shape: {}</i></b>".format(v.shape))
+                print("{},".format(v))
+            print('}')
+        else:
+            print(array)
+    else:
+        print("<b><i>shape: {}</i></b>".format(array.shape))
+        print(array)
 if file_type == FileType.NUMPY.value:
     # Solve numpy files .npy or .npz
     try:
         import numpy as np
         if file_path.endswith('npz'):
             content = np.load(file_path, allow_pickle=True)
-            integ_con = ''
+            print('{')
             for f in content.files:
-                integ_con += '[' + ','.join(map(str, content[f])) + '] '
-            print(integ_con)
+                print("'<b><i>{}</i></b>':".format(f))
+                print_ndarray(content[f])
+                print(',')
+            print('}')
         else:
             content = np.load(file_path, allow_pickle=True)
-            print(content)
+            print_ndarray(content)
     except Exception as e:
         print(e)
 elif file_type == FileType.PICKLE.value:
