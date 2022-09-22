@@ -1,5 +1,10 @@
 # Change Log
 
+## 0.0.4 (2022/09/22)
+
+- Fix: the update addresses [issue#2](https://github.com/haochengxia/vscode-pydata-viewer/issues/2)
+- Feat: prettier ndarray style with shape info. (by [jasongzy](https://github.com/jasongzy))
+
 ## 0.0.3 (2022/09/05)
 
 - Fix: error in judging torch files.

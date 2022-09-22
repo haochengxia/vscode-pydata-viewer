@@ -169,6 +169,7 @@ export class PyDataPreview extends Disposable {
         case 'npy': return FileType.NUMPY;
         case 'pkl': return FileType.PICKLE;
         case 'pth': return FileType.PYTORCH;
+        case 'pt': return FileType.PYTORCH;
         default: return FileType.NUMPY;
     }
   }
@@ -176,7 +177,7 @@ export class PyDataPreview extends Disposable {
 
 const read_files_script =
 `
-import sys;
+import sys
 file_type = int(sys.argv[1])
 file_path = sys.argv[2]
 
@@ -185,6 +186,7 @@ class FileType(Enum):
     NUMPY = 0
     PICKLE = 1
     PYTORCH = 2
+
 def print_ndarray(array):
     if array.dtype==np.dtype('O'):
         array = array.item()
@@ -201,6 +203,7 @@ def print_ndarray(array):
     else:
         print("<b><i>shape: {}</i></b>".format(array.shape))
         print(array)
+
 if file_type == FileType.NUMPY.value:
     # Solve numpy files .npy or .npz
     try:
@@ -211,7 +214,7 @@ if file_type == FileType.NUMPY.value:
             for f in content.files:
                 print("'<b><i>{}</i></b>':".format(f))
                 print_ndarray(content[f])
-                print(',')
+                # print(',')
             print('}')
         else:
             content = np.load(file_path, allow_pickle=True)
