@@ -1,8 +1,8 @@
 # PyData Viewer
 
-[![Version](https://vsmarketplacebadge.apphb.com/version/Percy.vscode-pydata-viewer.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=Percy.vscode-pydata-viewer)
-[![Downloads](https://vsmarketplacebadge.apphb.com/downloads-short/Percy.vscode-pydata-viewer.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=Percy.vscode-pydata-viewer)
-[![Installs](https://vsmarketplacebadge.apphb.com/installs-short/Percy.vscode-pydata-viewer.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=Percy.vscode-pydata-viewer)
+[![Version](https://img.shields.io/visual-studio-marketplace/v/Percy.vscode-pydata-viewer?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=Percy.vscode-pydata-viewer)
+[![Downloads](https://img.shields.io/visual-studio-marketplace/d/Percy.vscode-pydata-viewer.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=Percy.vscode-pydata-viewer)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/Percy.vscode-pydata-viewer.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=Percy.vscode-pydata-viewer)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
 Display Python data files in VSCode.
