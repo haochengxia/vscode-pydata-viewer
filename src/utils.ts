@@ -34,5 +34,5 @@ export function getResourcePath(webview: vscode.Webview, context: vscode.Extensi
     //fix for windows because there path.join will use \ as separator and when we inline this string in html/js
     //we get specials strings e.g. c:\n
     // return `vscode-resource:${path.join(context.extensionPath, filePath).replace(/\\/g, '/')}`
-    return `${webview.asWebviewUri(vscode.Uri.file(path.join(context.extensionPath, filePath).replace(/\\/g, '/')))}`
+    return `${webview.asWebviewUri(vscode.Uri.file(path.join(context.extensionPath, filePath).replace(/\\/g, '/')))}`;
 }

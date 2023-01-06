@@ -142,7 +142,7 @@ export class PyDataPreview extends Disposable {
         </head>`;
         const tail = ['</html>'].join('\n');
         const output =  head + `<body>              
-        <div id="x">` + content + `</div></body>` + tail;
+        <div id="x"><pre>` + content + `</pre></div></body>` + tail;
         console.log(output);
         handle.webviewEditor.webview.html = output;
         handle.update();
@@ -178,6 +178,11 @@ export class PyDataPreview extends Disposable {
 const read_files_script =
 `
 import sys
+try:
+  from pprintpp import pprint
+except ImportError:
+  console.log('Could not import pprintpp, using pprint fallback. For a better view install pprintpp with pip')
+  from pprint import pprint
 file_type = int(sys.argv[1])
 file_path = sys.argv[2]
 
@@ -227,7 +232,7 @@ elif file_type == FileType.PICKLE.value:
         import pickle
         f = open(file_path, 'rb')
         content = pickle.load(f)
-        print(content)
+        pprint(content)
     except Exception as e:
         print(e)
 elif file_type == FileType.PYTORCH.value:
