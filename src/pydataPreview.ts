@@ -168,6 +168,7 @@ export class PyDataPreview extends Disposable {
         case 'npz': return FileType.NUMPY;
         case 'npy': return FileType.NUMPY;
         case 'pkl': return FileType.PICKLE;
+        case 'pck': return FileType.PICKLE;
         case 'pth': return FileType.PYTORCH;
         case 'pt': return FileType.PYTORCH;
         default: return FileType.NUMPY;
@@ -241,3 +242,4 @@ elif file_type == FileType.PYTORCH.value:
 else:
     print('Unsupport file type.')
 `;
+

@@ -34,6 +34,9 @@
 						"filenamePattern": "*.pkl"
 					},
 					{
+						"filenamePattern": "*.pck"
+					},
+					{
 						"filenamePattern": "*.pth"
 					},
 					{
