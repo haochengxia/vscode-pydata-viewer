@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.0.5 (2023/02/25)
+
+- Feat: add config `pythonPath` to customize interpreter. (the update addresses [issue#7](https://github.com/haochengxia/vscode-pydata-viewer/issues/7))
+
 ## 0.0.4 (2022/09/22)
 
 - Fix: the update addresses [issue#2](https://github.com/haochengxia/vscode-pydata-viewer/issues/2)

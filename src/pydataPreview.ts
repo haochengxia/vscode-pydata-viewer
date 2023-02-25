@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import { Disposable } from './disposable';
-import { OSUtils } from './utils';
+import { getOption, OSUtils } from './utils';
 import {Options, PythonShell} from 'python-shell';
 
 type PreviewState = 'Disposed' | 'Visible' | 'Active';
@@ -116,8 +116,14 @@ export class PyDataPreview extends Disposable {
 
     // Call python
     console.log('starting python....');
-    const pythonPath = PythonShell.defaultPythonPath;
+    var pythonPath = PythonShell.defaultPythonPath;
     console.log('default python path', pythonPath);
+    const customPythonPath = getOption("vscode-pydata-viewer.pythonPath") as string;
+    if (customPythonPath !== "default") {
+      pythonPath = customPythonPath;
+      console.log("[+] custom python path:", customPythonPath);
+    }
+    
     let options : Options = {
         mode: 'text',
         pythonPath: pythonPath,

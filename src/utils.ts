@@ -36,3 +36,8 @@ export function getResourcePath(webview: vscode.Webview, context: vscode.Extensi
     // return `vscode-resource:${path.join(context.extensionPath, filePath).replace(/\\/g, '/')}`
     return `${webview.asWebviewUri(vscode.Uri.file(path.join(context.extensionPath, filePath).replace(/\\/g, '/')))}`
 }
+
+export function getOption(option: string) {
+    let config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration();
+    return config.get(option);
+}
