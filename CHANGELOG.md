@@ -4,7 +4,6 @@
 
 - Feat: add an extension name of pickle file, '.pickle'.
 
-
 ## 0.0.6 (2023/02/26)
 
 - Feat: add icon.
