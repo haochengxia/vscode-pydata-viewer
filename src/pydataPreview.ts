@@ -195,18 +195,33 @@ class FileType(Enum):
     PYTORCH = 2
 
 def print_ndarray(array):
-    if array.dtype==np.dtype('O'):
-        array = array.item()
-        if isinstance(array, dict):
-            print('{')
-            for k, v in array.items():
-                print("'<b><i>{}</i></b>':".format(k))
-                if isinstance(v, np.ndarray):
-                    print("<b><i>shape: {}</i></b>".format(v.shape))
-                print("{},".format(v))
-            print('}')
+    if not isinstance(array, np.ndarray):
+        array = np.array(array)
+    if array.dtype == np.dtype("O"):
+        if not array.shape:
+            array = array.item()
+            if isinstance(array, dict):
+                print("{")
+                for k, v in array.items():
+                    print("'<b><i>{}</i></b>':".format(k))
+                    if isinstance(v, np.ndarray):
+                        print("<b><i>shape: {}</i></b>".format(v.shape))
+                    print("{},".format(v))
+                print("}")
+            else:
+                print(array)
         else:
-            print(array)
+            if len(array) > 5:
+                print("[")
+                for item in array[:5]:
+                    print_ndarray(item)
+                    print(',')
+                print("...,")
+                print_ndarray(array[-1])
+                print("]")
+            else:
+                for item in array:
+                    print_ndarray(item)
     else:
         print("<b><i>shape: {}</i></b>".format(array.shape))
         print(array)
