@@ -1,5 +1,10 @@
 # Change Log
 
+## 0.0.8 (2023/03/29)
+
+- Feat: script as an external file.
+- Fix: encoding problem of pickle. (by [jasongzy](https://github.com/jasongzy))
+
 ## 0.0.7 (2023/03/29)
 
 - Feat: add an extension name of pickle file, '.pickle'.

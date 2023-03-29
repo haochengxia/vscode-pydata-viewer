@@ -30,14 +30,18 @@ export function settings() {
     return vscode.workspace.getConfiguration("PyDataViewer");
 }
 
-export function getResourcePath(webview: vscode.Webview, context: vscode.ExtensionContext, filePath: string): string {
-    //fix for windows because there path.join will use \ as separator and when we inline this string in html/js
-    //we get specials strings e.g. c:\n
-    // return `vscode-resource:${path.join(context.extensionPath, filePath).replace(/\\/g, '/')}`
-    return `${webview.asWebviewUri(vscode.Uri.file(path.join(context.extensionPath, filePath).replace(/\\/g, '/')))}`
-}
-
 export function getOption(option: string) {
     let config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration();
     return config.get(option);
+}
+
+
+export function getPyScriptsPath(file: string, context: vscode.ExtensionContext, webview?: vscode.Webview): string {
+    if (webview) {
+        const uri = vscode.Uri.file(context.asAbsolutePath(path.join("pyscripts", file)));
+
+        return webview.asWebviewUri(uri).toString();
+    }
+
+    return context.asAbsolutePath(path.join("pyscripts", file));
 }

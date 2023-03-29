@@ -1,15 +1,15 @@
 import * as vscode from 'vscode';
 
 import { Disposable } from './disposable';
-import { getOption, OSUtils } from './utils';
-import {Options, PythonShell} from 'python-shell';
+import { getOption, getPyScriptsPath, OSUtils } from './utils';
+import { Options, PythonShell } from 'python-shell';
 
 type PreviewState = 'Disposed' | 'Visible' | 'Active';
 
 enum FileType {
-    NUMPY,
-    PICKLE,
-    PYTORCH
+  NUMPY,
+  PICKLE,
+  PYTORCH
 }
 
 
@@ -17,6 +17,7 @@ export class PyDataPreview extends Disposable {
   private _previewState: PreviewState = 'Visible';
 
   constructor(
+    private readonly context: vscode.ExtensionContext,
     private readonly extensionRoot: vscode.Uri,
     private readonly resource: vscode.Uri,
     private readonly webviewEditor: vscode.WebviewPanel
@@ -99,11 +100,11 @@ export class PyDataPreview extends Disposable {
     this._previewState = 'Visible';
   }
 
-  public getWebviewContents(resourcePath : string) {
+  public getWebviewContents(resourcePath: string) {
     var path = resourcePath;
     switch (OSUtils.isWindows()) {
-      case true: 
-        path = path.slice(1, );
+      case true:
+        path = path.slice(1,);
         console.log('[+] Windows -> cut path', path);
         break;
       default:
@@ -111,7 +112,7 @@ export class PyDataPreview extends Disposable {
     }
     // extract the suffix
     const fileSuffix = path.toString().split('.').at(-1);
-    const ft : FileType = PyDataPreview.suffixToType(fileSuffix as string);
+    const ft: FileType = PyDataPreview.suffixToType(fileSuffix as string);
     console.log('[*] File type is: ', ft);
 
     // Call python
@@ -123,20 +124,23 @@ export class PyDataPreview extends Disposable {
       pythonPath = customPythonPath;
       console.log("[+] custom python path:", customPythonPath);
     }
-    
-    let options : Options = {
-        mode: 'text',
-        pythonPath: pythonPath,
-        pythonOptions: ['-u'],
-        // scriptPath: __dirname + '/pyscripts/',
-        args: [ft.toString(), path]
+
+    let options: Options = {
+      mode: 'text',
+      pythonPath: pythonPath,
+      pythonOptions: ['-u'],
+      // scriptPath: __dirname + '/pyscripts/',
+      args: [ft.toString(), path]
     };
-    
+
     const handle = this;
-    var content : string = 'init';
-    PythonShell.runString(READ_FILES_SCRIPT, 
+    var content: string = 'init';
+
+    const scriptPath = getPyScriptsPath("read_files.py", this.context);
+
+    PythonShell.run(scriptPath,
       options, function (err, results) {
-        if (err) {console.log(err);}
+        if (err) { console.log(err); }
         // results is an array consisting of messages collected during execution
         console.log('results: %j', results);
         var r = results as Array<string>;
@@ -147,12 +151,12 @@ export class PyDataPreview extends Disposable {
         <meta charset="utf-8">
         </head>`;
         const tail = ['</html>'].join('\n');
-        const output =  head + `<body>              
+        const output = head + `<body>              
         <div id="x">` + content + `</div></body>` + tail;
         console.log(output);
         handle.webviewEditor.webview.html = output;
         handle.update();
-    });
+      });
 
     // Replace , with ,\n for reading
     // var re = /,/gi;
@@ -169,105 +173,16 @@ export class PyDataPreview extends Disposable {
     // return output;
   }
 
-  public static suffixToType(suffix : string) {
+  public static suffixToType(suffix: string) {
     switch (suffix) {
-        case 'npz': return FileType.NUMPY;
-        case 'npy': return FileType.NUMPY;
-        case 'pkl': return FileType.PICKLE;
-        case 'pck': return FileType.PICKLE;
-        case 'pickle': return FileType.PICKLE;
-        case 'pth': return FileType.PYTORCH;
-        case 'pt': return FileType.PYTORCH;
-        default: return FileType.NUMPY;
+      case 'npz': return FileType.NUMPY;
+      case 'npy': return FileType.NUMPY;
+      case 'pkl': return FileType.PICKLE;
+      case 'pck': return FileType.PICKLE;
+      case 'pickle': return FileType.PICKLE;
+      case 'pth': return FileType.PYTORCH;
+      case 'pt': return FileType.PYTORCH;
+      default: return FileType.NUMPY;
     }
   }
 }
-
-const READ_FILES_SCRIPT =
-`
-import sys
-file_type = int(sys.argv[1])
-file_path = sys.argv[2]
-
-from enum import Enum
-class FileType(Enum):
-    NUMPY = 0
-    PICKLE = 1
-    PYTORCH = 2
-
-def print_ndarray(array):
-    if not isinstance(array, np.ndarray):
-        array = np.array(array)
-    if array.dtype == np.dtype("O"):
-        if not array.shape:
-            array = array.item()
-            if isinstance(array, dict):
-                print("{")
-                for k, v in array.items():
-                    print("'<b><i>{}</i></b>':".format(k))
-                    if isinstance(v, np.ndarray):
-                        print("<b><i>shape: {}</i></b>".format(v.shape))
-                    print("{},".format(v))
-                print("}")
-            else:
-                print(array)
-        else:
-            print("<b><i>shape: {}</i></b>".format(array.shape))
-            print("[")
-            if len(array) > 5:
-                for item in array[:5]:
-                    print_ndarray(item)
-                    print(",")
-                print("...,")
-                print_ndarray(array[-1])
-            else:
-                for item in array[:-1]:
-                    print_ndarray(item)
-                    print(",")
-                print_ndarray(array[-1])
-            print("]")
-    else:
-        print("<b><i>shape: {}</i></b>".format(array.shape))
-        print(array)
-
-if file_type == FileType.NUMPY.value:
-    # Solve numpy files .npy or .npz
-    try:
-        import numpy as np
-        if file_path.endswith("npz"):
-            content = np.load(file_path, allow_pickle=True)
-            print("{")
-            for f in content.files:
-                print("'<b><i>{}</i></b>':".format(f))
-                print_ndarray(content[f])
-                # print(",")
-            print("}")
-        else:
-            content = np.load(file_path, allow_pickle=True)
-            print_ndarray(content)
-    except Exception as e:
-        print(e)
-elif file_type == FileType.PICKLE.value:
-    # Solve pickle files .pkl
-    try:
-        import pickle
-        with open(file_path, "rb") as f:
-            content = pickle.load(f)
-        print(content)
-    except UnicodeDecodeError:
-        with open(file_path, "rb") as f:
-            content = pickle.load(f, encoding="latin1")
-        print(content)
-    except Exception as e:
-        print(e)
-elif file_type == FileType.PYTORCH.value:
-    # Solve pytorch files .pth
-    try:
-        import torch
-        content = torch.load(file_path)
-        print(content)
-    except Exception as e:
-        print(e)
-else:
-    print("Unsupport file type.")
-`;

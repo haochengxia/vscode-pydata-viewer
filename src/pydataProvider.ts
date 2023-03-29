@@ -7,7 +7,8 @@ export class PyDataCustomProvider implements vscode.CustomReadonlyEditorProvider
   private readonly _previews = new Set<PyDataPreview>();
   private _activePreview: PyDataPreview | undefined;
 
-  constructor(private readonly extensionRoot: vscode.Uri) { }
+  constructor(private readonly context: vscode.ExtensionContext,
+    private readonly extensionRoot: vscode.Uri) { }
 
   public openCustomDocument(uri: vscode.Uri): vscode.CustomDocument {
     return { uri, dispose: (): void => { } };
@@ -18,6 +19,7 @@ export class PyDataCustomProvider implements vscode.CustomReadonlyEditorProvider
     webviewEditor: vscode.WebviewPanel
   ): Promise<void> {
     const preview = new PyDataPreview(
+      this.context,
       this.extensionRoot,
       document.uri,
       webviewEditor
