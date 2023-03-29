@@ -134,7 +134,7 @@ export class PyDataPreview extends Disposable {
     
     const handle = this;
     var content : string = 'init';
-    PythonShell.runString(read_files_script, 
+    PythonShell.runString(READ_FILES_SCRIPT, 
       options, function (err, results) {
         if (err) {console.log(err);}
         // results is an array consisting of messages collected during execution
@@ -175,6 +175,7 @@ export class PyDataPreview extends Disposable {
         case 'npy': return FileType.NUMPY;
         case 'pkl': return FileType.PICKLE;
         case 'pck': return FileType.PICKLE;
+        case 'pickle': return FileType.PICKLE;
         case 'pth': return FileType.PYTORCH;
         case 'pt': return FileType.PYTORCH;
         default: return FileType.NUMPY;
@@ -182,7 +183,7 @@ export class PyDataPreview extends Disposable {
   }
 }
 
-const read_files_script =
+const READ_FILES_SCRIPT =
 `
 import sys
 file_type = int(sys.argv[1])
@@ -248,4 +249,3 @@ elif file_type == FileType.PYTORCH.value:
 else:
     print('Unsupport file type.')
 `;
-

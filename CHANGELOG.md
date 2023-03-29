@@ -1,5 +1,10 @@
 # Change Log
 
+## 0.0.7 (2023/03/29)
+
+- Feat: add an extension name of pickle file, '.pickle'.
+
+
 ## 0.0.6 (2023/02/26)
 
 - Feat: add icon.
@@ -7,6 +12,7 @@
 ## 0.0.5 (2023/02/25)
 
 - Feat: add config `pythonPath` to customize interpreter. (the update addresses [issue#7](https://github.com/haochengxia/vscode-pydata-viewer/issues/7))
+- Feat: add an extension name of pickle file, '.pck'. (by [blannoy](https://github.com/blannoy))
 
 ## 0.0.4 (2022/09/22)
 

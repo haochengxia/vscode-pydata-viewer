@@ -38,6 +38,9 @@
 						"filenamePattern": "*.pck"
 					},
 					{
+						"filenamePattern": "*.pickle"
+					},
+					{
 						"filenamePattern": "*.pth"
 					},
 					{
