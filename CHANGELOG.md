@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.0.9 (2023/04/19)
+
+- Feat: use monospace font and display blanks for pretty view.
+
 ## 0.0.8 (2023/03/29)
 
 - Feat: script as an external file.

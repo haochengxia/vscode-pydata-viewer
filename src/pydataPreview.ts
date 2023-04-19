@@ -144,6 +144,9 @@ export class PyDataPreview extends Disposable {
         // results is an array consisting of messages collected during execution
         console.log('results: %j', results);
         var r = results as Array<string>;
+        for (var i=1; i<r.length; i++) {
+          r[i] = r[i].replaceAll(" ", "&ensp;");
+        }
         content = r.join('<br>');
         const head = `<!DOCTYPE html>
         <html dir="ltr" mozdisallowselectionprint>
@@ -152,7 +155,9 @@ export class PyDataPreview extends Disposable {
         </head>`;
         const tail = ['</html>'].join('\n');
         const output = head + `<body>              
-        <div id="x">` + content + `</div></body>` + tail;
+        <div id="x" style='font-family: Menlo, Consolas, "Ubuntu Mono",
+        "Roboto Mono", "DejaVu Sans Mono",
+        monospace'>` + content + `</div></body>` + tail;
         console.log(output);
         handle.webviewEditor.webview.html = output;
         handle.update();
