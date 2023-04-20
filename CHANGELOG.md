@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.0.10 (2023/04/20)
+
+- Feat: support custom script. (the update for [issue#3](https://github.com/haochengxia/vscode-pydata-viewer/issues/3))
+
 ## 0.0.9 (2023/04/19)
 
 - Feat: use monospace font and display blanks for pretty view.

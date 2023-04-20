@@ -136,14 +136,18 @@ export class PyDataPreview extends Disposable {
     const handle = this;
     var content: string = 'init';
 
-    const scriptPath = getPyScriptsPath("read_files.py", this.context);
-
+    var scriptPath = getOption("vscode-pydata-viewer.scriptPath") as string;
+    if (scriptPath === "default") {
+      scriptPath = getPyScriptsPath("read_files.py", this.context);
+    }
+    console.log("current deployed script", scriptPath);
     PythonShell.run(scriptPath,
       options, function (err, results) {
         if (err) { console.log(err); }
         // results is an array consisting of messages collected during execution
         console.log('results: %j', results);
         var r = results as Array<string>;
+        // display the blank and line break with html labels
         for (var i=1; i<r.length; i++) {
           r[i] = r[i].replaceAll(" ", "&ensp;");
         }

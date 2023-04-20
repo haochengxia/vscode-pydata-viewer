@@ -3,7 +3,7 @@
 	"displayName": "vscode-pydata-viewer",
 	"description": "Display PyData files (.npz .npy .pkl .pth) in VSCode.",
 	"publisher": "Percy",
-	"version": "0.0.9",
+	"version": "0.0.10",
 	"icon": "images/icon.png",
 	"engines": {
 		"vscode": "^1.70.0"
@@ -57,6 +57,11 @@
 						"type": "string",
 						"default": "default",
 						"description": "The absolute path of python interpreter. `default` means no custom interpreter."
+					},
+					"vscode-pydata-viewer.scriptPath": {
+						"type": "string",
+						"default": "default",
+						"description": "The absolute path of custom script. `default` means no custom script."
 					}
 				}
 			}
