@@ -191,6 +191,7 @@ export class PyDataPreview extends Disposable {
       case 'pickle': return FileType.PICKLE;
       case 'pth': return FileType.PYTORCH;
       case 'pt': return FileType.PYTORCH;
+      case 'ckpt': return FileType.PYTORCH;
       default: return FileType.NUMPY;
     }
   }
