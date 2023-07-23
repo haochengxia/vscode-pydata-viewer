@@ -9,7 +9,7 @@ Display Python data files in VSCode.
 
 - Numpy Files: `.npz` `.npy`
 - Pickle Files: `.pkl` `.pck` `.pickle`
-- Torch Files: `.pth` `.pt`
+- Torch Files: `.pth` `.pt` `.ckpt`
 
 :pushpin: A Python interpreter is **mandatory** for this extension, please add python path into **SYSTEM ENVIRONMENT PATH**.
 
