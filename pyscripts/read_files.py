@@ -70,9 +70,16 @@ elif file_type == FileType.PICKLE.value:
     # Solve pickle files .pkl
     try:
         import pickle
+        i = 0
         with open(file_path, "rb") as f:
-            content = pickle.load(f)
-        print(content)
+            while True:
+                try:
+                    content = pickle.load(f)
+                    print(f'Item {i}:')
+                    print(content)
+                    i += 1
+                except EOFError:
+                    break
     except UnicodeDecodeError:
         with open(file_path, "rb") as f:
             content = pickle.load(f, encoding="latin1")
