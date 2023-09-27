@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.0.11
+
+- Feat: support pikle file with multiple obj. ([pull#16](https://github.com/haochengxia/vscode-pydata-viewer/pull/16) by [kenshi84](https://github.com/kenshi84))
+
 ## 0.0.10 (2023/04/20)
 
 - Feat: support custom script. (the update for [issue#3](https://github.com/haochengxia/vscode-pydata-viewer/issues/3))
