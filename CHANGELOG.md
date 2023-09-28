@@ -1,6 +1,6 @@
 # Change Log
 
-## 0.0.11
+## 0.0.11 (2023/09/28)
 
 - Feat: support pikle file with multiple obj. ([pull#16](https://github.com/haochengxia/vscode-pydata-viewer/pull/16) by [kenshi84](https://github.com/kenshi84))
 
