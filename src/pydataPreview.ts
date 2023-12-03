@@ -149,6 +149,9 @@ export class PyDataPreview extends Disposable {
         var r = results as Array<string>;
         // display the blank and line break with html labels
         for (var i=1; i<r.length; i++) {
+          if (r[i].startsWith('<img')) {
+            continue;
+          }
           r[i] = r[i].replaceAll(" ", "&ensp;");
         }
         content = r.join('<br>');

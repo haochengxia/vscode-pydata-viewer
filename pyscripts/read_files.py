@@ -13,6 +13,29 @@ class FileType(Enum):
     NUMPY = 0
     PICKLE = 1
     PYTORCH = 2
+    
+    
+# ============ Enhancement ============
+# gathering enhance features here
+ENHANCE_PLT = True
+
+try:
+    import matplotlib.pyplot as plt
+    from io import BytesIO
+    import base64
+    
+    # dummy to load manager for plt
+    _ = plt.figure()
+    def render_plot_to_html(fig):        
+        buf = BytesIO()
+        fig.savefig(buf, format='jpeg')
+        buf.seek(0)
+        img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+        html_img = f'<img src="data:image/jpeg;base64,{img_base64}">'
+        return html_img
+except:
+    ENHANCE_PLT = False
+# =====================================
 
 def print_ndarray(array):
     if not isinstance(array, np.ndarray):
@@ -79,6 +102,9 @@ elif file_type == FileType.PICKLE.value:
                     break
         num_contents = len(contents)
         for i, c in enumerate(contents):
+            if ENHANCE_PLT:
+                if isinstance(c, plt.Figure):
+                    c = render_plot_to_html(c)
             print(f'Item {i+1}/{num_contents}:', c, sep="\n")
     except UnicodeDecodeError:
         with open(file_path, "rb") as f:

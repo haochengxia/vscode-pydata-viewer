@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.0.12 (2023/12/03)
+
+- Feat: support to show `plt.figure` instances (matplotlib.pyplot). (the update for [issue#18](https://github.com/haochengxia/vscode-pydata-viewer/issues/18) by [beijiguang94](https://github.com/beijiguang94))
+
 ## 0.0.11 (2023/09/28)
 
 - Feat: support pikle file with multiple obj. ([pull#16](https://github.com/haochengxia/vscode-pydata-viewer/pull/16) by [kenshi84](https://github.com/kenshi84))
