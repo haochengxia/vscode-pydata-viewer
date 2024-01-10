@@ -136,10 +136,14 @@ export class PyDataPreview extends Disposable {
     const handle = this;
     var content: string = 'init';
 
+    const workspace = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(resourcePath));
     var scriptPath = getOption("vscode-pydata-viewer.scriptPath") as string;
     if (scriptPath === "default") {
       scriptPath = getPyScriptsPath("read_files.py", this.context);
+    } else {
+      scriptPath = scriptPath.replace('${workspaceFolder}', workspace? workspace.uri.fsPath : "");
     }
+
     console.log("current deployed script", scriptPath);
     PythonShell.run(scriptPath,
       options, function (err, results) {
