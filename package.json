@@ -44,6 +44,9 @@
 						"filenamePattern": "*.pth"
 					},
 					{
+						"filenamePattern": "*.ckpt"
+					},
+					{
 						"filenamePattern": "*.pt"
 					}
 				]
