@@ -116,7 +116,7 @@ elif file_type == FileType.PYTORCH.value:
     # Solve pytorch files .pth
     try:
         import torch
-        content = torch.load(file_path)
+        content = torch.load(file_path, map_location='cpu')
         print(content)
     except Exception as e:
         print(e)
