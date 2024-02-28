@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.0.13 (2024/02/28)
+
+- Feat: use CPU to load torch files. ([pull#23](https://github.com/haochengxia/vscode-pydata-viewer/pull/23) by [blaise-tk](https://github.com/blaise-tk))
+
 ## 0.0.12 (2023/12/03)
 
 - Feat: support to show `plt.figure` instances (matplotlib.pyplot). (the update for [issue#18](https://github.com/haochengxia/vscode-pydata-viewer/issues/18) by [beijiguang94](https://github.com/beijiguang94))
