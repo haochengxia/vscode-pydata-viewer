@@ -70,7 +70,8 @@ def print_ndarray(array):
             print("]")
     else:
         print("<b><i>shape: {}</i></b>".format(array.shape))
-        print(array)
+        # repr(array) will outputs "array([e, e, ...])", we cut the head "array(" and tail ")", then replace redundant 6 spaces per line
+        print(repr(array)[6:-1].replace(" " * 6, ""))
 
 if file_type == FileType.NUMPY.value:
     # Solve numpy files .npy or .npz

@@ -156,7 +156,7 @@ export class PyDataPreview extends Disposable {
           if (r[i].startsWith('<img')) {
             continue;
           }
-          r[i] = r[i].replaceAll(" ", "&ensp;");
+          r[i] = r[i].replaceAll(" ", "&nbsp;");
         }
         content = r.join('<br>');
         const head = `<!DOCTYPE html>
