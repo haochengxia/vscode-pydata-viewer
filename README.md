@@ -11,9 +11,9 @@ Display Python data files in VSCode.
 - Pickle Files: `.pkl` `.pck` `.pickle`
 - Torch Files: `.pth` `.pt` `.ckpt`
 
-:pushpin: A Python interpreter is **mandatory** for this extension, please add python path into **SYSTEM ENVIRONMENT PATH**.
+:pushpin: A Python interpreter is **mandatory** for this extension, please add python path into **SYSTEM ENVIRONMENT PATH** or add the path to an interpreter in the Extension settings.
 
-If you DO NOT have a avaliable Python on your device but need to view numpy files, the extension [vscode-numpy-viewer](https://github.com/haochengxia/vscode-numpy-viewer) which may be helpful.
+If you DO NOT have Python available on your device but need to view numpy files, the extension [vscode-numpy-viewer](https://github.com/haochengxia/vscode-numpy-viewer) may be helpful.
 
 ## Change log
 
