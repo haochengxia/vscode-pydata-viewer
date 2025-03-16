@@ -41,6 +41,9 @@
 						"filenamePattern": "*.pickle"
 					},
 					{
+						"filenamePattern": "*.pkl.gz"
+					},
+					{
 						"filenamePattern": "*.pth"
 					},
 					{

@@ -1,0 +1,6 @@
+numpy
+torch
+matplotlib
+compress_pickle
+pytest
+pytest-cov 

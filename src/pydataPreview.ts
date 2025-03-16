@@ -9,7 +9,8 @@ type PreviewState = 'Disposed' | 'Visible' | 'Active';
 enum FileType {
   NUMPY,
   PICKLE,
-  PYTORCH
+  PYTORCH,
+  COMPRESSED_PICKLE
 }
 
 
@@ -111,7 +112,11 @@ export class PyDataPreview extends Disposable {
         console.log('[+] NOT Windows', path);
     }
     // extract the suffix
-    const fileSuffix = path.toString().split('.').at(-1);
+    var fileSuffix = path.toString().split('.').at(-1);
+    if (fileSuffix === 'gz' || fileSuffix === 'tar') {
+      const fileSuffix2 = path.toString().split('.').at(-2);
+      fileSuffix = fileSuffix2 + '.' + fileSuffix;
+    }
     const ft: FileType = PyDataPreview.suffixToType(fileSuffix as string);
     console.log('[*] File type is: ', ft);
 
@@ -196,6 +201,7 @@ export class PyDataPreview extends Disposable {
       case 'pkl': return FileType.PICKLE;
       case 'pck': return FileType.PICKLE;
       case 'pickle': return FileType.PICKLE;
+      case 'pkl.gz': return FileType.COMPRESSED_PICKLE;
       case 'pth': return FileType.PYTORCH;
       case 'pt': return FileType.PYTORCH;
       case 'ckpt': return FileType.PYTORCH;

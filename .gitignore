@@ -3,3 +3,13 @@ dist
 node_modules
 .vscode-test/
 *.vsix
+
+# for python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.pyx
+*.pyx
+*.pyx
+*.pyx
