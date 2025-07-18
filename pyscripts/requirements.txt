@@ -1,6 +1,9 @@
+# Core dependencies
 numpy
 torch
 matplotlib
 compress_pickle
+
+# Testing
 pytest
 pytest-cov 
