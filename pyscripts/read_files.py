@@ -146,6 +146,7 @@ def process_file(file_type: int, file_path: str):
 
 def main():
     """main function"""
+    sys.stdout.reconfigure(encoding='utf-8')
     if len(sys.argv) < 3:
         print("Usage: python read_files.py <file_type> <file_path>")
         return

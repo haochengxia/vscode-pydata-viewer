@@ -134,6 +134,7 @@ export class PyDataPreview extends Disposable {
       mode: 'text',
       pythonPath: pythonPath,
       pythonOptions: ['-u'],
+      encoding: 'utf8',
       // scriptPath: __dirname + '/pyscripts/',
       args: [ft.toString(), path]
     };
