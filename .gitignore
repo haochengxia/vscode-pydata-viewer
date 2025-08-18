@@ -10,6 +10,9 @@ __pycache__
 *.pyo
 *.pyd
 *.pyx
-*.pyx
-*.pyx
-*.pyx
+
+# test files and outputs
+test_output/
+*.pkl
+temp/
+.pytest_cache/
