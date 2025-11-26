@@ -13,8 +13,8 @@ import base64
 
 # ============ Configuration ============
 MAX_DEPTH = 10         # Max nesting level to prevent infinite recursion
-MAX_ITEMS = 20         # Max items to show per collection (start + end)
-MAX_STR_LEN = 100      # Max string characters before truncation
+MAX_ITEMS = 30         # Max items to show per collection (start + end)
+MAX_STR_LEN = 1000      # Max string characters before truncation
 INDENT_SPACER = "&nbsp;&nbsp;&nbsp;&nbsp;" # 4 spaces for HTML indentation
 # =======================================
 
@@ -116,10 +116,10 @@ class JetBrainsFormatter:
             if len(obj) > MAX_STR_LEN:
                 preview = obj[:MAX_STR_LEN] \
                     .replace('<', '&lt;').replace('>', '&gt;').replace('\n', '\\n')
-                return f"<span style='color:#6a8759'>'{preview}...'</span> <i>(len={len(obj)})</i>"
+                return f"<i>(len={len(obj)})</i><span style='color:#6a8759'>'{preview}...'</span>"
             else:
                 safe_str = obj.replace('<', '&lt;').replace('>', '&gt;').replace('\n', '\\n')
-                return f"<span style='color:#6a8759'>'{safe_str}'</span>"
+                return f"<i>(len={len(obj)})</i><span style='color:#6a8759'>'{safe_str}'</span>"
 
         # --- Bytes ---
         if isinstance(obj, bytes):
@@ -161,10 +161,13 @@ class JetBrainsFormatter:
         # If small 1D/2D, print full content
         if arr.size < 20 and arr.ndim <= 2:
             content = str(arr).replace('\n', f'\n{self._get_indent(level+1)}')
-            return f"{header}<br>{self._get_indent(level)}{content}"
+            return f"{header}"
 
         # Otherwise, show preview
-        return f"{header}<br>{self._get_indent(level)}min: {np.min(arr):.4g}, max: {np.max(arr):.4g}, mean: {np.mean(arr):.4g}"
+        try:
+            return f"{header} min: {np.min(arr):.4g}, max: {np.max(arr):.4g}, mean: {np.mean(arr):.4g}"
+        except Exception as e:
+            return f"{header}"
 
     def _format_torch(self, tensor, level):
         shape_str = str(tuple(tensor.shape)).replace(" ", "")
