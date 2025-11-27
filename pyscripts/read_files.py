@@ -36,6 +36,8 @@ except ImportError:
     torch = None
 
 try:
+    import matplotlib
+    matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     # dummy to load manager for plt
     _ = plt.figure()
@@ -161,7 +163,7 @@ class JetBrainsFormatter:
         # If small 1D/2D, print full content
         if arr.size < 20 and arr.ndim <= 2:
             content = str(arr).replace('\n', f'\n{self._get_indent(level+1)}')
-            return f"{header}"
+            return f"{header} {content}"
 
         # Otherwise, show preview
         try:
