@@ -1,11 +1,22 @@
 # -*- coding: utf-8 -*-
 
 """
-sys.argv[1]: `.npy` or `.npz` file path
+sys.argv[1]: File Type ID
+sys.argv[2]: File Path
 """
 
 import sys
+import types
 from enum import Enum
+from io import BytesIO
+import base64
+
+# ============ Configuration ============
+MAX_DEPTH = 10         # Max nesting level to prevent infinite recursion
+MAX_ITEMS = 30         # Max items to show per collection (start + end)
+MAX_STR_LEN = 1000      # Max string characters before truncation
+INDENT_SPACER = "&nbsp;&nbsp;&nbsp;&nbsp;" # 4 spaces for HTML indentation
+# =======================================
 
 class FileType(Enum):
     NUMPY = 0
@@ -13,262 +24,333 @@ class FileType(Enum):
     PYTORCH = 2
     COMPRESSED_PICKLE = 3
 
-# ============ Enhancement ============
-# gathering enhance features here
-ENHANCE_PLT = True
+# Library Loading with Fallbacks
+try:
+    import numpy as np
+except ImportError:
+    np = None
+
+try:
+    import torch
+except ImportError:
+    torch = None
 
 try:
     import matplotlib.pyplot as plt
-    from io import BytesIO
-    import base64
-    
     # dummy to load manager for plt
     _ = plt.figure()
-    def render_plot_to_html(fig):        
-        buf = BytesIO()
-        fig.savefig(buf, format='jpeg')
-        buf.seek(0)
-        img_base64 = base64.b64encode(buf.read()).decode('utf-8')
-        html_img = f'<img src="data:image/jpeg;base64,{img_base64}">'
-        return html_img
+    HAS_MPL = True
 except:
-    ENHANCE_PLT = False
-# =====================================
+    HAS_MPL = False
 
-np = None
+# ============ Core Formatter ============
 
-def format_pickle_content(obj, max_list_items=50, max_dict_items=20, indent_level=0):
-    """Enhanced formatting for pickle file contents to reduce truncation"""
-    indent = "&nbsp;" * (indent_level * 2)
-    
-    if isinstance(obj, np.ndarray) if np else False:
-        # Use existing numpy array formatting but with better formatting
-        if obj.size <= 100:  # For small arrays, show full content
-            return f"<b><i>shape: {obj.shape}</i></b><br>{repr(obj)[6:-1].replace(' ' * 6, '')}"
-        else:
-            # For large arrays, show shape and some sample data
-            sample_size = min(10, obj.size)
-            flat_view = obj.flat
-            sample_values = [str(next(flat_view)) for _ in range(sample_size)]
-            return f"<b><i>shape: {obj.shape}, dtype: {obj.dtype}, size: {obj.size}</i></b><br>Sample values: [{', '.join(sample_values)}, ...]"
-    
-    elif isinstance(obj, dict):
-        if len(obj) == 0:
-            return "{}"
+class JetBrainsFormatter:
+    def __init__(self):
+        self.seen_ids = set()
+
+    def _render_plot_to_html(self, fig):
+        """Renders a matplotlib figure to base64 HTML"""
+        try:
+            buf = BytesIO()
+            fig.savefig(buf, format='jpeg')
+            buf.seek(0)
+            img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+            plt.close(fig)
+            return f'<br><img src="data:image/jpeg;base64,{img_base64}"><br>'
+        except Exception as e:
+            return f"&lt;Plot Error: {e}&gt;"
+
+    def _get_indent(self, level):
+        return INDENT_SPACER * level
+
+    def _format_header(self, type_name, meta_info):
+        """
+        Returns bold type name and italicized meta info.
+        Example: <b>list</b> <i>(len=50)</i>
+        """
+        return f"<b>{type_name}</b> <i>{meta_info}</i>"
+
+    def format(self, obj, level=0):
+        """Recursive entry point"""
         
-        result = "{\n"
-        items_shown = 0
-        for key, value in obj.items():
-            if items_shown >= max_dict_items:
-                result += f"{indent}&nbsp;&nbsp;... ({len(obj) - items_shown} more items)\n"
-                break
-            
-            result += f"{indent}&nbsp;&nbsp;<b>'{key}'</b>: "
-            if isinstance(value, (dict, list, tuple)) and len(str(value)) > 100:
-                result += f"\n{indent}&nbsp;&nbsp;&nbsp;&nbsp;"
-                result += format_pickle_content(value, max_list_items, max_dict_items, indent_level + 2)
+        # 1. Handle Matplotlib Figures (Special Case)
+        if HAS_MPL and isinstance(obj, plt.Figure):
+            return self._render_plot_to_html(obj)
+
+        # 2. Check Recursion Depth & Circular References
+        if level > MAX_DEPTH:
+            return "<i>... (max depth exceeded)</i>"
+        
+        obj_id = id(obj)
+        # Only track container types for circular refs
+        if isinstance(obj, (dict, list, tuple, set)) and obj_id in self.seen_ids:
+             return f"<i>... (circular reference {type(obj).__name__})</i>"
+        
+        # We don't add immutable primitives to seen_ids, only containers
+        is_container = isinstance(obj, (dict, list, tuple, set))
+        if is_container:
+            self.seen_ids.add(obj_id)
+
+        try:
+            res = self._dispatch_format(obj, level)
+        finally:
+            if is_container:
+                self.seen_ids.remove(obj_id)
+        
+        return res
+
+    def _dispatch_format(self, obj, level):
+        indent = self._get_indent(level)
+        
+        # --- Basic Primitives ---
+        if obj is None:
+            return f"<span style='color:#888'>None</span>"
+        if isinstance(obj, bool):
+            return f"<span style='color:#cc7832'>{str(obj)}</span>"
+        if isinstance(obj, (int, float, complex)):
+            return f"<span style='color:#6897bb'>{str(obj)}</span>"
+        
+        # --- Strings (with truncation) ---
+        if isinstance(obj, str):
+            if len(obj) > MAX_STR_LEN:
+                preview = obj[:MAX_STR_LEN] \
+                    .replace('<', '&lt;').replace('>', '&gt;').replace('\n', '\\n')
+                return f"<i>(len={len(obj)})</i><span style='color:#6a8759'>'{preview}...'</span>"
             else:
-                result += format_pickle_content(value, max_list_items, max_dict_items, indent_level + 1)
-            result += ",\n"
-            items_shown += 1
+                safe_str = obj.replace('<', '&lt;').replace('>', '&gt;').replace('\n', '\\n')
+                return f"<i>(len={len(obj)})</i><span style='color:#6a8759'>'{safe_str}'</span>"
+
+        # --- Bytes ---
+        if isinstance(obj, bytes):
+            return f"<b>bytes</b> <i>(len={len(obj)})</i>"
+
+        # --- NumPy Arrays ---
+        if np and isinstance(obj, np.ndarray):
+            return self._format_numpy(obj, level)
+
+        # --- PyTorch Tensors ---
+        if torch and isinstance(obj, torch.Tensor):
+            return self._format_torch(obj, level)
+
+        # --- Dictionaries ---
+        if isinstance(obj, dict):
+            return self._format_dict(obj, level)
+
+        # --- Lists / Tuples / Sets ---
+        if isinstance(obj, (list, tuple, set)):
+            return self._format_sequence(obj, level)
+
+        # --- Generic Objects (Classes) ---
+        if hasattr(obj, '__dict__'):
+            return self._format_object(obj, level)
+
+        # --- Fallback ---
+        return str(obj)
+
+    def _format_numpy(self, arr, level):
+        shape_str = str(arr.shape).replace(" ", "")
+        header = self._format_header("ndarray", f"(shape={shape_str}, dtype={arr.dtype})")
         
-        result += f"{indent}}}"
-        return result
-    
-    elif isinstance(obj, (list, tuple)):
-        type_name = "list" if isinstance(obj, list) else "tuple"
-        if len(obj) == 0:
-            return f"{type_name}()" if isinstance(obj, tuple) else "[]"
+        if arr.size == 0:
+            return header + " []"
         
-        # For small lists/tuples, show all items
-        if len(obj) <= max_list_items:
-            bracket_start = "(" if isinstance(obj, tuple) else "["
-            bracket_end = ")" if isinstance(obj, tuple) else "]"
+        if arr.size == 1:
+            return header + f" {str(arr.item())}"
+
+        # If small 1D/2D, print full content
+        if arr.size < 20 and arr.ndim <= 2:
+            content = str(arr).replace('\n', f'\n{self._get_indent(level+1)}')
+            return f"{header}"
+
+        # Otherwise, show preview
+        try:
+            return f"{header} min: {np.min(arr):.4g}, max: {np.max(arr):.4g}, mean: {np.mean(arr):.4g}"
+        except Exception as e:
+            return f"{header}"
+
+    def _format_torch(self, tensor, level):
+        shape_str = str(tuple(tensor.shape)).replace(" ", "")
+        device = str(tensor.device)
+        dtype = str(tensor.dtype).replace("torch.", "")
+        header = self._format_header("tensor", f"(shape={shape_str}, dtype={dtype}, device={device})")
+        
+        if tensor.numel() == 1:
+            return header + f" {tensor.item()}"
             
-            if len(obj) <= 10:  # Show all items inline for small collections
-                items = [str(item) for item in obj]
-                return f"{bracket_start}{', '.join(items)}{bracket_end}"
-            else:  # Show items with line breaks for medium collections
-                result = f"{bracket_start}\n"
-                for i, item in enumerate(obj):
-                    result += f"{indent}&nbsp;&nbsp;[{i}]: {format_pickle_content(item, max_list_items, max_dict_items, indent_level + 1)},\n"
-                result += f"{indent}{bracket_end}"
-                return result
+        return f"{header}"
+
+    def _format_sequence(self, seq, level):
+        # Lists, Tuples, Sets
+        type_name = type(seq).__name__
+        length = len(seq)
+        header = self._format_header(type_name, f"(len={length})")
+        
+        if length == 0:
+            return header + " []"
+
+        indent = self._get_indent(level)
+        child_indent = self._get_indent(level + 1)
+        
+        # Convert set to list for indexing
+        items = list(seq) if isinstance(seq, set) else seq
+        
+        result = [header, " {"]
+        
+        # Determine how many items to show
+        indices_to_show = []
+        if length <= MAX_ITEMS:
+            indices_to_show = range(length)
         else:
-            # For large lists/tuples, show first few, middle indicator, and last few
-            bracket_start = "(" if isinstance(obj, tuple) else "["
-            bracket_end = ")" if isinstance(obj, tuple) else "]"
-            show_count = min(5, max_list_items // 2)
+            # Show first few and last few
+            half = MAX_ITEMS // 2
+            indices_to_show = list(range(half)) + [-1] + list(range(length - half, length))
+
+        for i in indices_to_show:
+            if i == -1:
+                result.append(f"<br>{child_indent}<i>... ({length - MAX_ITEMS} more items) ...</i>")
+                continue
+                
+            val = items[i]
+            formatted_val = self.format(val, level + 1)
+            result.append(f"<br>{child_indent}[{i}]: {formatted_val}")
             
-            result = f"{bracket_start}\n"
-            # Show first few items
-            for i in range(show_count):
-                result += f"{indent}&nbsp;&nbsp;[{i}]: {format_pickle_content(obj[i], max_list_items, max_dict_items, indent_level + 1)},\n"
+        result.append(f"<br>{indent}}}")
+        return "".join(result)
+
+    def _format_dict(self, d, level):
+        length = len(d)
+        header = self._format_header("dict", f"(len={length})")
+        
+        if length == 0:
+            return header + " {}"
+
+        indent = self._get_indent(level)
+        child_indent = self._get_indent(level + 1)
+        
+        result = [header, " {"]
+        
+        keys = list(d.keys())
+        indices_to_show = []
+        
+        if length <= MAX_ITEMS:
+            indices_to_show = range(length)
+        else:
+            half = MAX_ITEMS // 2
+            indices_to_show = list(range(half)) + [-1] + list(range(length - half, length))
+
+        for i in indices_to_show:
+            if i == -1:
+                result.append(f"<br>{child_indent}<i>... ({length - MAX_ITEMS} more items) ...</i>")
+                continue
+                
+            key = keys[i]
+            val = d[key]
             
-            # Show truncation indicator
-            result += f"{indent}&nbsp;&nbsp;... ({len(obj) - 2 * show_count} more items),\n"
+            # Format Key
+            key_str = str(key)
+            if isinstance(key, str):
+                key_str = f"'{key}'"
             
-            # Show last few items
-            for i in range(len(obj) - show_count, len(obj)):
-                result += f"{indent}&nbsp;&nbsp;[{i}]: {format_pickle_content(obj[i], max_list_items, max_dict_items, indent_level + 1)}"
-                if i < len(obj) - 1:
-                    result += ","
-                result += "\n"
+            formatted_val = self.format(val, level + 1)
+            result.append(f"<br>{child_indent}<b>{key_str}</b>: {formatted_val}")
             
-            result += f"{indent}{bracket_end}"
-            return result
-    
-    elif hasattr(obj, '__dict__') and not isinstance(obj, type):
-        # Custom objects with attributes
-        result = f"<b>{type(obj).__name__}</b> {{\n"
+        result.append(f"<br>{indent}}}")
+        return "".join(result)
+
+    def _format_object(self, obj, level):
+        # Custom objects
         attrs = {k: v for k, v in obj.__dict__.items() if not k.startswith('_')}
+        header = self._format_header(type(obj).__name__, f"(attrs={len(attrs)})")
         
-        if attrs:
-            for key, value in list(attrs.items())[:max_dict_items]:
-                result += f"{indent}&nbsp;&nbsp;<b>{key}</b>: {format_pickle_content(value, max_list_items, max_dict_items, indent_level + 1)},\n"
-            if len(attrs) > max_dict_items:
-                result += f"{indent}&nbsp;&nbsp;... ({len(attrs) - max_dict_items} more attributes)\n"
+        indent = self._get_indent(level)
+        child_indent = self._get_indent(level + 1)
         
-        result += f"{indent}}}"
-        return result
-    
-    else:
-        # Basic types (int, float, str, bool, None, etc.)
-        return repr(obj)
+        result = [header, " {"]
+        
+        for k, v in list(attrs.items())[:MAX_ITEMS]:
+            formatted_val = self.format(v, level + 1)
+            result.append(f"<br>{child_indent}<b>{k}</b>: {formatted_val}")
+            
+        if len(attrs) > MAX_ITEMS:
+             result.append(f"<br>{child_indent}<i>... ({len(attrs) - MAX_ITEMS} more attributes)</i>")
+             
+        result.append(f"<br>{indent}}}")
+        return "".join(result)
 
-def print_ndarray(array):
-    if not isinstance(array, np.ndarray):
-        array = np.array(array)
-    if array.dtype == np.dtype("O"):
-        if not array.shape:
-            array = array.item()
-            if isinstance(array, dict):
-                print("{")
-                for k, v in array.items():
-                    print("'<b><i>{}</i></b>':".format(k))
-                    if isinstance(v, np.ndarray):
-                        print("<b><i>shape: {}</i></b>".format(v.shape))
-                    print("{},".format(v))
-                print("}")
-            else:
-                print(array)
-        else:
-            print("<b><i>shape: {}</i></b>".format(array.shape))
-            print("[")
-            if len(array) > 5:
-                for item in array[:5]:
-                    print_ndarray(item)
-                    print(",")
-                print("...,")
-                print_ndarray(array[-1])
-            else:
-                for item in array[:-1]:
-                    print_ndarray(item)
-                    print(",")
-                print_ndarray(array[-1])
-            print("]")
-    else:
-        print("<b><i>shape: {}</i></b>".format(array.shape))
-        # repr(array) will outputs "array([e, e, ...])", we cut the head "array(" and tail ")", then replace redundant 6 spaces per line
-        print(repr(array)[6:-1].replace(" " * 6, ""))
+# ============ Main Processor ============
 
 def process_file(file_type: int, file_path: str):
-    """main function to process file
+    """Loads file and applies formatting"""
     
-    Args:
-        file_type: 
-        file_path: 
-    """
-    global np
-    
-    if file_type == FileType.NUMPY.value:
-        # Solve numpy files .npy or .npz
-        try:
-            import numpy as np
-            if file_path.endswith("npz"):
-                content = np.load(file_path, allow_pickle=True)
-                print("{")
-                for f in content.files:
-                    print("'<b><i>{}</i></b>':".format(f))
-                    print_ndarray(content[f])
-                print("}")
-            else:
-                content = np.load(file_path, allow_pickle=True)
-                print_ndarray(content)
-        except Exception as e:
-            print(e)
+    content = None
+    formatter = JetBrainsFormatter()
 
-    elif file_type == FileType.PICKLE.value:
-        # Solve pickle files .pkl
-        try:
+    try:
+        # 1. Load the content based on type
+        if file_type == FileType.NUMPY.value:
+            if np is None: raise ImportError("Numpy not installed")
+            content = np.load(file_path, allow_pickle=True)
+            # Handle .npz (NpzFile) specifically
+            if hasattr(content, 'files'):
+                print("<b>NpzFile</b> <i>(keys={})</i> {{".format(len(content.files)))
+                for k in content.files:
+                    print(f"&nbsp;&nbsp;<b>'{k}'</b>: {formatter.format(content[k], 1)}")
+                print("}")
+                return
+
+        elif file_type == FileType.PICKLE.value:
             import pickle
-            # Import numpy for enhanced array formatting
-            if np is None:
-                try:
-                    import numpy as np
-                except ImportError:
-                    pass
-                
-            contents = []
+            # Read all objects in the pickle file
+            items = []
             with open(file_path, "rb") as f:
                 while True:
                     try:
-                        contents.append(pickle.load(f))
+                        items.append(pickle.load(f))
                     except EOFError:
                         break
-            num_contents = len(contents)
-            for i, c in enumerate(contents):
-                if ENHANCE_PLT:
-                    if isinstance(c, plt.Figure):
-                        c = render_plot_to_html(c)
-                        print(f'Item {i+1}/{num_contents}:', c, sep="\n")
-                        continue
-                
-                # Use enhanced formatting for non-matplotlib objects
-                print(f'<b>Item {i+1}/{num_contents}:</b>')
-                formatted_content = format_pickle_content(c)
-                print(formatted_content)
-        except UnicodeDecodeError:
-            with open(file_path, "rb") as f:
-                content = pickle.load(f, encoding="latin1")
-            print(content)
-        except Exception as e:
-            print(e)
+                    except UnicodeDecodeError:
+                        # Fallback for older python 2 pickles
+                        f.seek(0)
+                        items.append(pickle.load(f, encoding="latin1"))
+                        break
             
-    elif file_type == FileType.COMPRESSED_PICKLE.value:
-        # compressed pickle file .pkl.gz
-        try:
+            if len(items) == 1:
+                content = items[0]
+            else:
+                content = items # Treat multiple pickle dumps as a list
+
+        elif file_type == FileType.COMPRESSED_PICKLE.value:
             import compress_pickle
-            contents = compress_pickle.load(file_path)
-            if ENHANCE_PLT:
-                if isinstance(contents, plt.Figure):
-                    contents = render_plot_to_html(contents)
-            print(contents)
-        except Exception as e:
-            print(e)
-            
-    elif file_type == FileType.PYTORCH.value:
-        # Solve pytorch files .pth
-        try:
-            import torch
-            content = torch.load(file_path, map_location='cpu', weights_only=True)
-            print(content)
-        except Exception as e:
-            print(e)
-    else:
-        print("Unsupport file type.")
+            content = compress_pickle.load(file_path)
+
+        elif file_type == FileType.PYTORCH.value:
+            if torch is None: raise ImportError("Torch not installed")
+            content = torch.load(file_path, map_location='cpu')
+
+        else:
+            print("Unsupported file type.")
+            return
+
+        # 2. Format and Print
+        print(formatter.format(content))
+
+    except Exception as e:
+        # Print error in red
+        print(f"<span style='color:red'>Error processing file: {e}</span>")
+        import traceback
+        traceback.print_exc()
 
 def main():
-    """main function"""
     sys.stdout.reconfigure(encoding='utf-8')
     if len(sys.argv) < 3:
         print("Usage: python read_files.py <file_type> <file_path>")
         return
     
     try:
-        file_type = int(sys.argv[1])
-        file_path = sys.argv[2]
-        process_file(file_type, file_path)
+        f_type = int(sys.argv[1])
+        f_path = sys.argv[2]
+        process_file(f_type, f_path)
     except ValueError:
         print("Error: file_type must be an integer")
     except Exception as e:
