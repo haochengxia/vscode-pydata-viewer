@@ -24,6 +24,12 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		)
 	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('vscode-pydata-viewer.toggleTruncation', () => {
+			provider.toggleTruncation();
+		})
+	);
 }
 
 // this method is called when your extension is deactivated

@@ -16,6 +16,17 @@ MAX_DEPTH = 10         # Max nesting level to prevent infinite recursion
 MAX_ITEMS = 30         # Max items to show per collection (start + end)
 MAX_STR_LEN = 1000      # Max string characters before truncation
 INDENT_SPACER = "&nbsp;&nbsp;&nbsp;&nbsp;" # 4 spaces for HTML indentation
+
+def set_config(mode):
+    global MAX_DEPTH, MAX_ITEMS, MAX_STR_LEN
+    if mode == 'full':
+        MAX_DEPTH = 100
+        MAX_ITEMS = 1000000
+        MAX_STR_LEN = 1000000
+        if np:
+            np.set_printoptions(threshold=sys.maxsize)
+        if torch:
+            torch.set_printoptions(threshold=float('inf'))
 # =======================================
 
 class FileType(Enum):
@@ -162,9 +173,9 @@ class JetBrainsFormatter:
             return header + f" {self.format(arr.item(), level + 1)}"
 
         # If small 1D/2D, print full content
-        if arr.size < 20 and arr.ndim <= 2:
+        if (arr.size < 20 and arr.ndim <= 2) or MAX_ITEMS > 1000:
             content = str(arr).replace('\n', f'\n{self._get_indent(level+1)}')
-            return f"{header} {content}"
+            return f"{header}<br>{self._get_indent(level+1)}{content}"
 
         # Otherwise, show preview
         try:
@@ -370,12 +381,16 @@ def process_file(file_type: int, file_path: str):
 def main():
     sys.stdout.reconfigure(encoding='utf-8')
     if len(sys.argv) < 3:
-        print("Usage: python read_files.py <file_type> <file_path>")
+        print("Usage: python read_files.py <file_type> <file_path> [mode]")
         return
     
     try:
         f_type = int(sys.argv[1])
         f_path = sys.argv[2]
+        
+        if len(sys.argv) > 3:
+            set_config(sys.argv[3])
+            
         process_file(f_type, f_path)
     except ValueError:
         print("Error: file_type must be an integer")

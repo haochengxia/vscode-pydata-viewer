@@ -47,4 +47,10 @@ export class PyDataCustomProvider implements vscode.CustomReadonlyEditorProvider
   private setActivePreview(value: PyDataPreview | undefined): void {
     this._activePreview = value;
   }
+
+  public toggleTruncation(): void {
+    if (this._activePreview) {
+      this._activePreview.toggleTruncation();
+    }
+  }
 }
