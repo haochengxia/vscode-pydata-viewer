@@ -2,6 +2,8 @@ import pytest
 import numpy as np
 import pickle
 import torch
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import os
 import sys
@@ -13,7 +15,7 @@ current_dir = Path(__file__).parent
 project_root = current_dir.parent.parent
 sys.path.insert(0, str(project_root))
 
-from pyscripts.read_files import FileType, print_ndarray, render_plot_to_html, process_file
+from pyscripts.read_files import FileType, process_file
 
 class TestReadFiles:
     @pytest.fixture
@@ -65,7 +67,7 @@ class TestReadFiles:
     def test_numpy_file_reading(self, setup_test_files, capsys):
         process_file(FileType.NUMPY.value, str(setup_test_files['npy_path']))
         captured = capsys.readouterr()
-        assert 'shape: (2, 2)' in captured.out
+        assert 'shape=(2,2)' in captured.out
 
     def test_numpy_archive_reading(self, setup_test_files, capsys):
         process_file(FileType.NUMPY.value, str(setup_test_files['npz_path']))
@@ -100,7 +102,7 @@ class TestReadFiles:
     def test_invalid_file_type(self, capsys):
         process_file(999, 'nonexistent.file')
         captured = capsys.readouterr()
-        assert "Unsupport file type" in captured.out
+        assert "Unsupported file type" in captured.out
 
     def test_nonexistent_file(self, capsys):
         process_file(FileType.NUMPY.value, 'nonexistent.npy')

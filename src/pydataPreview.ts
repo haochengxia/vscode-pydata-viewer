@@ -151,19 +151,17 @@ export class PyDataPreview extends Disposable {
     }
 
     console.log("current deployed script", scriptPath);
-    PythonShell.run(scriptPath,
-      options, function (err, results) {
-        if (err) { console.log(err); }
+    PythonShell.run(scriptPath, options).then(results => {
         // results is an array consisting of messages collected during execution
         console.log('results: %j', results);
         var r = results as Array<string>;
         // display the blank and line break with html labels
-        for (var i=1; i<r.length; i++) {
-          if (r[i].startsWith('<img')) {
-            continue;
-          }
-          r[i] = r[i].replaceAll(" ", "&nbsp;");
-        }
+        // for (var i=1; i<r.length; i++) {
+        //   if (r[i].startsWith('<img')) {
+        //     continue;
+        //   }
+        //   r[i] = r[i].replaceAll(" ", "&nbsp;");
+        // }
         content = r.join('<br>');
         const head = `<!DOCTYPE html>
         <html dir="ltr" mozdisallowselectionprint>
@@ -178,7 +176,21 @@ export class PyDataPreview extends Disposable {
         console.log(output);
         handle.webviewEditor.webview.html = output;
         handle.update();
-      });
+    }).catch(err => {
+        console.log(err);
+        const head = `<!DOCTYPE html>
+        <html dir="ltr" mozdisallowselectionprint>
+        <head>
+        <meta charset="utf-8">
+        </head>`;
+        const tail = ['</html>'].join('\n');
+        const output = head + `<body>              
+        <div id="x" style='color: red; font-family: Menlo, Consolas, "Ubuntu Mono",
+        "Roboto Mono", "DejaVu Sans Mono",
+        monospace'>Error: ` + err + `</div></body>` + tail;
+        handle.webviewEditor.webview.html = output;
+        handle.update();
+    });
 
     // Replace , with ,\n for reading
     // var re = /,/gi;
