@@ -158,7 +158,8 @@ class JetBrainsFormatter:
             return header + " []"
         
         if arr.size == 1:
-            return header + f" {str(arr.item())}"
+            # Use recursive format for the single item
+            return header + f" {self.format(arr.item(), level + 1)}"
 
         # If small 1D/2D, print full content
         if arr.size < 20 and arr.ndim <= 2:
@@ -303,24 +304,44 @@ def process_file(file_type: int, file_path: str):
 
         elif file_type == FileType.PICKLE.value:
             import pickle
+            
+            class UnknownObject:
+                def __init__(self, *args, **kwargs):
+                    self.args = args
+                    self.kwargs = kwargs
+                def __repr__(self):
+                    return f"<UnknownObject>"
+
+            class SafeUnpickler(pickle.Unpickler):
+                def find_class(self, module, name):
+                    try:
+                        return super().find_class(module, name)
+                    except (AttributeError, ImportError):
+                        # Create a dynamic class with the original name so it shows up correctly in the formatter
+                        return type(name, (UnknownObject,), {
+                            '__module__': module,
+                            '__repr__': lambda self: f"<{module}.{name}>"
+                        })
+
             # Read all objects in the pickle file
             items = []
             with open(file_path, "rb") as f:
                 while True:
                     try:
-                        items.append(pickle.load(f))
+                        items.append(SafeUnpickler(f).load())
                     except EOFError:
                         break
                     except UnicodeDecodeError:
                         # Fallback for older python 2 pickles
                         f.seek(0)
-                        items.append(pickle.load(f, encoding="latin1"))
+                        items.append(SafeUnpickler(f, encoding="latin1").load())
                         break
             
-            if len(items) == 1:
-                content = items[0]
-            else:
-                content = items # Treat multiple pickle dumps as a list
+            # v0 compatibility: Print items with headers
+            for i, item in enumerate(items):
+                print(f'<b>Item {i+1}/{len(items)}:</b>')
+                print(formatter.format(item))
+            return
 
         elif file_type == FileType.COMPRESSED_PICKLE.value:
             import compress_pickle
@@ -328,7 +349,10 @@ def process_file(file_type: int, file_path: str):
 
         elif file_type == FileType.PYTORCH.value:
             if torch is None: raise ImportError("Torch not installed")
-            content = torch.load(file_path, map_location='cpu')
+            try:
+                content = torch.load(file_path, map_location='cpu', weights_only=True)
+            except TypeError:
+                content = torch.load(file_path, map_location='cpu')
 
         else:
             print("Unsupported file type.")
