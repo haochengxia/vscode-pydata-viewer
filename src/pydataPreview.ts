@@ -16,6 +16,7 @@ enum FileType {
 
 export class PyDataPreview extends Disposable {
   private _previewState: PreviewState = 'Visible';
+  private _isFullMode: boolean = false;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -136,7 +137,7 @@ export class PyDataPreview extends Disposable {
       pythonOptions: ['-u'],
       encoding: 'utf8',
       // scriptPath: __dirname + '/pyscripts/',
-      args: [ft.toString(), path]
+      args: [ft.toString(), path, this._isFullMode ? 'full' : 'truncated']
     };
 
     const handle = this;
@@ -205,6 +206,11 @@ export class PyDataPreview extends Disposable {
     // <div id="x">` + content + `</div></body>` + tail;
     // console.log(output);
     // return output;
+  }
+
+  public toggleTruncation(): void {
+    this._isFullMode = !this._isFullMode;
+    this.getWebviewContents(this.resource.path);
   }
 
   public static suffixToType(suffix: string) {

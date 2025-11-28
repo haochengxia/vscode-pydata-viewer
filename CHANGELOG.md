@@ -1,5 +1,14 @@
 # Change Log
 
+## 0.0.14 (2025/11/27)
+
+- Feat: Enhanced formatting for pickle files (better truncation for large collections and arrays).
+- Feat: Added toggle button to switch between truncated and full output modes.
+- Fix: Resolved `matplotlib` backend issues by enforcing headless mode (Agg).
+- Fix: Updated dependencies (`python-shell` v5, `glob` v10) to resolve deprecation warnings.
+- Fix: Restored syntax highlighting colors in the preview.
+- Fix: Improved handling of custom objects in pickle files.
+
 ## 0.0.13 (2024/02/28)
 
 - Feat: use CPU to load torch files. ([pull#23](https://github.com/haochengxia/vscode-pydata-viewer/pull/23) by [blaise-tk](https://github.com/blaise-tk))

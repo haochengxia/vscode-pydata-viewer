@@ -16,3 +16,4 @@ test_output/
 *.pkl
 temp/
 .pytest_cache/
+.venv/

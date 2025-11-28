@@ -8,3 +8,12 @@ vsc-extension-quickstart.md
 **/.eslintrc.json
 **/*.map
 **/*.ts
+.venv/**
+__pycache__/**
+.pytest_cache/**
+uv.lock
+pyproject.toml
+test_output/**
+*.py
+!pyscripts/read_files.py
+!pyscripts/requirements.txt
