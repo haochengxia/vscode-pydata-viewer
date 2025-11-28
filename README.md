@@ -8,6 +8,8 @@
 
 Display Python data files in VSCode.
 
+![img](https://github.com/haochengxia/vscode-pydata-viewer/blob/screenshot/Recording.gif?raw=true)
+
 ## Supported File Types
 
 - **Numpy Files**: `.npz` `.npy`
