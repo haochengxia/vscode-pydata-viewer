@@ -122,13 +122,14 @@ export class PyDataPreview extends Disposable {
     console.log('[*] File type is: ', ft);
 
     // Call python
+    const workspace = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(resourcePath));
     console.log('starting python....');
     var pythonPath = PythonShell.defaultPythonPath;
     console.log('default python path', pythonPath);
     const customPythonPath = getOption("vscode-pydata-viewer.pythonPath") as string;
     if (customPythonPath !== "default") {
-      pythonPath = customPythonPath;
-      console.log("[+] custom python path:", customPythonPath);
+      pythonPath = customPythonPath.replace('${workspaceFolder}', workspace ? workspace.uri.fsPath : "");
+      console.log("[+] custom python path:", pythonPath);
     }
 
     let options: Options = {
@@ -143,7 +144,6 @@ export class PyDataPreview extends Disposable {
     const handle = this;
     var content: string = 'init';
 
-    const workspace = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(resourcePath));
     var scriptPath = getOption("vscode-pydata-viewer.scriptPath") as string;
     if (scriptPath === "default") {
       scriptPath = getPyScriptsPath("read_files.py", this.context);
