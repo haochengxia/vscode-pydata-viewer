@@ -130,6 +130,30 @@ export class PyDataPreview extends Disposable {
     if (customPythonPath !== "default") {
       pythonPath = customPythonPath.replace('${workspaceFolder}', workspace ? workspace.uri.fsPath : "");
       console.log("[+] custom python path:", pythonPath);
+      
+      // Check if custom python path exists
+      try {
+        const fs = require('fs');
+        if (!fs.existsSync(pythonPath)) {
+          console.error('[ERROR] Custom Python path does not exist:', pythonPath);
+          const errorMsg = `<span style='color:red'>Error: Custom Python path does not exist: ${pythonPath}<br><br>Please check your settings: vscode-pydata-viewer.pythonPath</span>`;
+          const head = `<!DOCTYPE html>
+          <html dir="ltr" mozdisallowselectionprint>
+          <head>
+          <meta charset="utf-8">
+          </head>`;
+          const tail = ['</html>'].join('\n');
+          const output = head + `<body>              
+          <div id="x" style='font-family: Menlo, Consolas, "Ubuntu Mono",
+          "Roboto Mono", "DejaVu Sans Mono",
+          monospace'>` + errorMsg + `</div></body>` + tail;
+          this.webviewEditor.webview.html = output;
+          this.update();
+          return;
+        }
+      } catch (err) {
+        console.error('[ERROR] Failed to check Python path:', err);
+      }
     }
 
     let options: Options = {
@@ -152,9 +176,30 @@ export class PyDataPreview extends Disposable {
     }
 
     console.log("current deployed script", scriptPath);
+    console.log("Python options:", JSON.stringify(options));
     PythonShell.run(scriptPath, options).then(results => {
         // results is an array consisting of messages collected during execution
         console.log('results: %j', results);
+        console.log('results length:', results?.length);
+        
+        if (!results || results.length === 0) {
+          console.log('Warning: No results returned from Python script');
+          const errorMsg = `<span style='color:orange'>Warning: No output from Python script. File may be empty or unreadable.</span>`;
+          const head = `<!DOCTYPE html>
+          <html dir="ltr" mozdisallowselectionprint>
+          <head>
+          <meta charset="utf-8">
+          </head>`;
+          const tail = ['</html>'].join('\n');
+          const output = head + `<body>              
+          <div id="x" style='font-family: Menlo, Consolas, "Ubuntu Mono",
+          "Roboto Mono", "DejaVu Sans Mono",
+          monospace'>` + errorMsg + `</div></body>` + tail;
+          handle.webviewEditor.webview.html = output;
+          handle.update();
+          return;
+        }
+        
         var r = results as Array<string>;
         // display the blank and line break with html labels
         // for (var i=1; i<r.length; i++) {
@@ -178,17 +223,20 @@ export class PyDataPreview extends Disposable {
         handle.webviewEditor.webview.html = output;
         handle.update();
     }).catch(err => {
-        console.log(err);
+        console.log('Python error:', err);
+        console.log('Error type:', typeof err);
+        console.log('Error stack:', err?.stack);
         const head = `<!DOCTYPE html>
         <html dir="ltr" mozdisallowselectionprint>
         <head>
         <meta charset="utf-8">
         </head>`;
         const tail = ['</html>'].join('\n');
+        const errorDetails = err?.message || err?.toString() || 'Unknown error';
         const output = head + `<body>              
         <div id="x" style='color: red; font-family: Menlo, Consolas, "Ubuntu Mono",
         "Roboto Mono", "DejaVu Sans Mono",
-        monospace'>Error: ` + err + `</div></body>` + tail;
+        monospace'>Error: ` + errorDetails + `</div></body>` + tail;
         handle.webviewEditor.webview.html = output;
         handle.update();
     });
