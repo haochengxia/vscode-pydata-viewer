@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.0.15 (2025/12/01)
+
+- Fix: Fixed python-shell dependency packaging issue.
+- Fix: Added validation for custom Python path with user-friendly error messages.
+- Fix: Enhanced logging for better debugging of Python script execution.
+
 ## 0.0.14 (2025/11/27)
 
 - Feat: Enhanced formatting for pickle files (better truncation for large collections and arrays).
