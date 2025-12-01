@@ -95,7 +95,7 @@
 		"watch": "tsc -watch -p ./",
 		"pretest": "npm run compile && npm run lint",
 		"lint": "eslint src --ext ts",
-		"test": "node ./out/test/runTest.js"
+		"test": "node --no-deprecation ./out/test/runTest.js"
 	},
 	"dependencies": {
 		"python-shell": "^5.0.0"
@@ -111,7 +111,6 @@
 		"eslint": "^8.16.0",
 		"glob": "^10.3.10",
 		"mocha": "^10.0.0",
-		"python-shell": "^5.0.0",
 		"typescript": "^4.7.2"
 	},
 	"overrides": {
