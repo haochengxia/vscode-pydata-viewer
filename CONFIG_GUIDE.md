@@ -3,14 +3,17 @@
 ## Quick Setup / 快速配置
 
 ### 1. Basic Settings / 基本设置
+
 Open VS Code Settings (`Cmd+,`) and search for "pydata viewer" to configure:
 
 打开 VS Code 设置 (`Cmd+,`)，搜索 "pydata viewer"，配置：
 
 - **Python Path**: Set to your Python interpreter path / 设置为你的 Python 解释器路径
+- **Use Python Extension Interpreter**: Automatically follow `ms-python.python` active interpreter when Python Path is `default` / 当 Python Path 为 `default` 时自动跟随 `ms-python.python` 的活动解释器
 - **Script Path**: Set to custom script path (optional) / 设置为自定义脚本路径（可选）
 
 ### 2. Using uv Environment / 使用 uv 环境
+
 If you use uv to manage your Python environment:
 
 如果你使用 uv 管理 Python 环境：
@@ -27,18 +30,21 @@ Set the output path as Python Path.
 ### 3. Handling Local Imports / 处理本地导入
 
 #### Method 1: Workspace Configuration / 方法 1: 工作区配置
+
 Create `.vscode/settings.json` in your project root:
 
 在项目根目录创建 `.vscode/settings.json`：
 
 ```json
 {
-  "vscode-pydata-viewer.pythonPath": "/path/to/your/python",
+   "vscode-pydata-viewer.pythonPath": "default",
+   "vscode-pydata-viewer.usePythonExtensionInterpreter": true,
   "vscode-pydata-viewer.scriptPath": "${workspaceFolder}/simple_processor.py"
 }
 ```
 
 #### Method 2: Custom Script / 方法 2: 自定义脚本
+
 Create a processing script:
 
 创建一个处理脚本：
@@ -72,11 +78,13 @@ if __name__ == "__main__":
 ## Testing Steps / 测试步骤
 
 1. **Create test files / 创建测试文件**：
+
    ```bash
    uv run python test_local_imports.py create
    ```
 
 2. **Test custom script / 测试自定义脚本**：
+
    ```bash
    uv run python simple_processor.py 1 test_output/test_model.pkl
    ```
@@ -90,6 +98,9 @@ if __name__ == "__main__":
    - You should see formatted output / 应该能看到格式化的输出
 
 ## Common Issues / 常见问题
+
+**Q: Why doesn't interpreter follow Python: Select Interpreter? / 为什么没有跟随 Python: Select Interpreter？**
+A: Ensure `ms-python.python` is installed, set `vscode-pydata-viewer.pythonPath` to `default`, and enable `vscode-pydata-viewer.usePythonExtensionInterpreter`. / 请确认已安装 `ms-python.python`，并将 `vscode-pydata-viewer.pythonPath` 设为 `default`，`vscode-pydata-viewer.usePythonExtensionInterpreter` 设为 `true`。
 
 **Q: Getting "No module named" error? / 出现 "No module named" 错误？**
 A: Add `sys.path.insert(0, str(Path(__file__).parent))` to your custom script / 在自定义脚本中添加 `sys.path.insert(0, str(Path(__file__).parent))`
