@@ -62,7 +62,12 @@
 					"vscode-pydata-viewer.pythonPath": {
 						"type": "string",
 						"default": "default",
-						"description": "The absolute path of python interpreter. `default` means no custom interpreter."
+						"description": "The absolute path of Python interpreter. `default` means using the active interpreter from Python extension when available, then falling back to system default."
+					},
+					"vscode-pydata-viewer.usePythonExtensionInterpreter": {
+						"type": "boolean",
+						"default": true,
+						"description": "When pythonPath is `default`, use the active interpreter selected by ms-python.python if available."
 					},
 					"vscode-pydata-viewer.scriptPath": {
 						"type": "string",
@@ -98,6 +103,7 @@
 		"test": "node --no-deprecation ./out/test/runTest.js"
 	},
 	"dependencies": {
+		"@vscode/python-extension": "^1.0.6",
 		"python-shell": "^5.0.0"
 	},
 	"devDependencies": {

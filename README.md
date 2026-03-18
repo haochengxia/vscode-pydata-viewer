@@ -18,9 +18,9 @@ Display Python data files in VSCode.
 
 ## Quick Start
 
-1. Install the extension from VS Code marketplace
-2. Open any supported data file in VS Code
-3. The file will automatically display with formatted content
+1. Install the extension from VS Code marketplace.
+2. Open any supported data file in VS Code.
+3. The file will automatically display with formatted content.
 
 ## Requirements
 
@@ -30,17 +30,29 @@ Display Python data files in VSCode.
 
 ### Extension Settings
 
-- `vscode-pydata-viewer.pythonPath`: Path to Python interpreter (default: `"default"`)
-- `vscode-pydata-viewer.scriptPath`: Path to custom processing script (default: `"default"`)
+- `vscode-pydata-viewer.pythonPath`: Path to Python interpreter (default: `"default"`).
+- `vscode-pydata-viewer.usePythonExtensionInterpreter`: Use active interpreter from `ms-python.python` when `pythonPath="default"` (default: `true`).
+- `vscode-pydata-viewer.scriptPath`: Path to custom processing script (default: `"default"`).
+
+### Interpreter Resolution Priority
+
+When opening a data file, interpreter selection follows:
+
+1. `vscode-pydata-viewer.pythonPath` if not `"default"`
+2. Active interpreter from Python extension (`ms-python.python`) if available and enabled
+3. Fallback to system/default Python used by `python-shell`
+
+> To use automatic follow mode, install the Python extension (`ms-python.python`).
 
 ### Python Path Setup
 
-1. Open VS Code Settings (`Cmd+,` or `Ctrl+,`)
-2. Search for "pydata viewer"
-3. Set **Python Path**:
-   - **System Python**: Leave as `"default"`
-   - **Virtual Environment**: `/path/to/venv/bin/python`
-   - **Conda Environment**: `/path/to/conda/envs/myenv/bin/python`
+1. Open VS Code Settings (`Cmd+,` or `Ctrl+,`).
+2. Search for `pydata viewer`.
+3. Set one of these **Python Path** options:
+   - **Auto follow interpreter**: Leave as `"default"` and keep `usePythonExtensionInterpreter=true`.
+   - **System Python fallback**: Leave as `"default"` without Python extension.
+   - **Virtual Environment**: `/path/to/venv/bin/python`.
+   - **Conda Environment**: `/path/to/conda/envs/myenv/bin/python`.
 
 ## Handling Local Imports
 
@@ -70,12 +82,13 @@ def process_pickle_file(file_path):
 if __name__ == "__main__":
     file_type = int(sys.argv[1])
     file_path = sys.argv[2]
-    
+
     if file_type == 1:  # Pickle file
         process_pickle_file(file_path)
 ```
 
 Then set the script path in VS Code settings:
+
 ```json
 {
   "vscode-pydata-viewer.scriptPath": "/path/to/your/custom_script.py"
@@ -106,21 +119,31 @@ For project-specific configuration, create `.vscode/settings.json`:
 ## Common Issues
 
 **"No module named 'your_module'" Error**
-- Use a custom script with proper imports
-- Set Python path to your project environment
-- Ensure your virtual environment contains required dependencies
+
+- Use a custom script with proper imports.
+- Set Python path to your project environment.
+- Ensure your virtual environment contains required dependencies.
 
 **"Python not found" Error**
-- Check Python installation
-- Set full path to Python executable in settings
-- Restart VS Code after changing settings
+
+- Check Python installation.
+- Set full path to Python executable in settings.
+- Restart VS Code after changing settings.
+
+**Interpreter does not follow `Python: Select Interpreter`**
+
+- Ensure `ms-python.python` is installed and enabled.
+- Set `vscode-pydata-viewer.pythonPath` to `"default"`.
+- Keep `vscode-pydata-viewer.usePythonExtensionInterpreter` as `true`.
 
 ## Examples
 
 ### Basic Usage
+
 Simply open any `.npy`, `.pkl`, or `.pth` file in VS Code.
 
 ### Custom Objects
+
 ```python
 import pickle
 
@@ -140,5 +163,3 @@ Please refer to [CHANGELOG.md](./CHANGELOG.md).
 ## Related Extensions
 
 If you don't have Python available but need to view numpy files, try [vscode-numpy-viewer](https://github.com/haochengxia/vscode-numpy-viewer).
-
-

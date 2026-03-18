@@ -2,6 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import { PyDataCustomProvider } from './pydataProvider';
+import { PythonInterpreterService } from './pythonInterpreter';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -11,8 +12,17 @@ export function activate(context: vscode.ExtensionContext) {
 	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "vscode-pydata-viewer" is now active!');
 
+	const interpreterService = new PythonInterpreterService();
+	context.subscriptions.push(interpreterService);
+	void interpreterService.initialize();
+
 	const extensionRoot = vscode.Uri.file(context.extensionPath);
-	const provider = new PyDataCustomProvider(context, extensionRoot);
+	const provider = new PyDataCustomProvider(context, extensionRoot, interpreterService);
+	context.subscriptions.push(
+		interpreterService.onDidChangeInterpreter((event) => {
+			provider.reloadAllPreviews(event.resource);
+		})
+	);
 	context.subscriptions.push(
 		vscode.window.registerCustomEditorProvider(
 			PyDataCustomProvider.viewType,

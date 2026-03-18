@@ -1,8 +1,11 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
 
 import { Disposable } from './disposable';
 import { getOption, getPyScriptsPath, OSUtils } from './utils';
 import { Options, PythonShell } from 'python-shell';
+import { PythonInterpreterService } from './pythonInterpreter';
+import { PythonPathResolutionResult, resolvePythonPathPriority } from './pythonPathResolution';
 
 type PreviewState = 'Disposed' | 'Visible' | 'Active';
 
@@ -17,12 +20,18 @@ enum FileType {
 export class PyDataPreview extends Disposable {
   private _previewState: PreviewState = 'Visible';
   private _isFullMode: boolean = false;
+  private _loadRequestId: number = 0;
+
+  public get resourceUri(): vscode.Uri {
+    return this.resource;
+  }
 
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly extensionRoot: vscode.Uri,
     private readonly resource: vscode.Uri,
-    private readonly webviewEditor: vscode.WebviewPanel
+    private readonly webviewEditor: vscode.WebviewPanel,
+    private readonly interpreterService: PythonInterpreterService
   ) {
     super();
     const resourceRoot = resource.with({
@@ -80,7 +89,7 @@ export class PyDataPreview extends Disposable {
       })
     );
 
-    this.getWebviewContents(this.resource.path);
+    void this.getWebviewContents(this.resource.path);
     this.update();
   }
 
@@ -102,7 +111,9 @@ export class PyDataPreview extends Disposable {
     this._previewState = 'Visible';
   }
 
-  public getWebviewContents(resourcePath: string) {
+  public async getWebviewContents(resourcePath: string): Promise<void> {
+    const requestId = ++this._loadRequestId;
+
     var path = resourcePath;
     switch (OSUtils.isWindows()) {
       case true:
@@ -123,37 +134,27 @@ export class PyDataPreview extends Disposable {
 
     // Call python
     const workspace = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(resourcePath));
+    const workspacePath = workspace ? workspace.uri.fsPath : '';
     console.log('starting python....');
-    var pythonPath = PythonShell.defaultPythonPath;
-    console.log('default python path', pythonPath);
-    const customPythonPath = getOption("vscode-pydata-viewer.pythonPath") as string;
-    if (customPythonPath !== "default") {
-      pythonPath = customPythonPath.replace('${workspaceFolder}', workspace ? workspace.uri.fsPath : "");
-      console.log("[+] custom python path:", pythonPath);
-      
-      // Check if custom python path exists
-      try {
-        const fs = require('fs');
-        if (!fs.existsSync(pythonPath)) {
-          console.error('[ERROR] Custom Python path does not exist:', pythonPath);
-          const errorMsg = `<span style='color:red'>Error: Custom Python path does not exist: ${pythonPath}<br><br>Please check your settings: vscode-pydata-viewer.pythonPath</span>`;
-          const head = `<!DOCTYPE html>
-          <html dir="ltr" mozdisallowselectionprint>
-          <head>
-          <meta charset="utf-8">
-          </head>`;
-          const tail = ['</html>'].join('\n');
-          const output = head + `<body>              
-          <div id="x" style='font-family: Menlo, Consolas, "Ubuntu Mono",
-          "Roboto Mono", "DejaVu Sans Mono",
-          monospace'>` + errorMsg + `</div></body>` + tail;
-          this.webviewEditor.webview.html = output;
-          this.update();
-          return;
-        }
-      } catch (err) {
-        console.error('[ERROR] Failed to check Python path:', err);
-      }
+
+    const pythonResolution = await this.resolvePythonPath(this.resource, workspacePath);
+    if (!pythonResolution.path) {
+      this.renderSimpleMessage(
+        `Error: Unable to resolve Python interpreter.<br><br>${pythonResolution.hint}`,
+        'red'
+      );
+      return;
+    }
+
+    const pythonPath = pythonResolution.path;
+    console.log(`[PyData Viewer] Using python (${pythonResolution.source}):`, pythonPath);
+
+    if (this.shouldValidatePathExists(pythonPath) && !this.existsPath(pythonPath)) {
+      this.renderSimpleMessage(
+        `Error: Python path does not exist: ${pythonPath}<br><br>${pythonResolution.hint}`,
+        'red'
+      );
+      return;
     }
 
     let options: Options = {
@@ -172,12 +173,15 @@ export class PyDataPreview extends Disposable {
     if (scriptPath === "default") {
       scriptPath = getPyScriptsPath("read_files.py", this.context);
     } else {
-      scriptPath = scriptPath.replace('${workspaceFolder}', workspace? workspace.uri.fsPath : "");
+      scriptPath = scriptPath.replace('${workspaceFolder}', workspacePath);
     }
 
     console.log("current deployed script", scriptPath);
     console.log("Python options:", JSON.stringify(options));
     PythonShell.run(scriptPath, options).then(results => {
+        if (!this.shouldApplyResult(requestId)) {
+          return;
+        }
         // results is an array consisting of messages collected during execution
         console.log('results: %j', results);
         console.log('results length:', results?.length);
@@ -195,8 +199,7 @@ export class PyDataPreview extends Disposable {
           <div id="x" style='font-family: Menlo, Consolas, "Ubuntu Mono",
           "Roboto Mono", "DejaVu Sans Mono",
           monospace'>` + errorMsg + `</div></body>` + tail;
-          handle.webviewEditor.webview.html = output;
-          handle.update();
+          handle.safeApplyWebviewHtml(requestId, output);
           return;
         }
         
@@ -220,9 +223,11 @@ export class PyDataPreview extends Disposable {
         "Roboto Mono", "DejaVu Sans Mono",
         monospace'>` + content + `</div></body>` + tail;
         console.log(output);
-        handle.webviewEditor.webview.html = output;
-        handle.update();
+        handle.safeApplyWebviewHtml(requestId, output);
     }).catch(err => {
+        if (!this.shouldApplyResult(requestId)) {
+          return;
+        }
         console.log('Python error:', err);
         console.log('Error type:', typeof err);
         console.log('Error stack:', err?.stack);
@@ -233,12 +238,12 @@ export class PyDataPreview extends Disposable {
         </head>`;
         const tail = ['</html>'].join('\n');
         const errorDetails = err?.message || err?.toString() || 'Unknown error';
+        const interpreterPath = options.pythonPath ?? '<unknown>';
         const output = head + `<body>              
         <div id="x" style='color: red; font-family: Menlo, Consolas, "Ubuntu Mono",
         "Roboto Mono", "DejaVu Sans Mono",
-        monospace'>Error: ` + errorDetails + `</div></body>` + tail;
-        handle.webviewEditor.webview.html = output;
-        handle.update();
+        monospace'>Error: ` + errorDetails + `<br><br>Interpreter: ` + interpreterPath + `</div></body>` + tail;
+        handle.safeApplyWebviewHtml(requestId, output);
     });
 
     // Replace , with ,\n for reading
@@ -258,7 +263,73 @@ export class PyDataPreview extends Disposable {
 
   public toggleTruncation(): void {
     this._isFullMode = !this._isFullMode;
-    this.getWebviewContents(this.resource.path);
+    void this.getWebviewContents(this.resource.path);
+  }
+
+  public refreshFromInterpreterChange(): void {
+    void this.getWebviewContents(this.resource.path);
+  }
+
+  private shouldApplyResult(requestId: number): boolean {
+    return this._previewState !== 'Disposed' && requestId === this._loadRequestId;
+  }
+
+  private safeApplyWebviewHtml(requestId: number, html: string): void {
+    if (!this.shouldApplyResult(requestId)) {
+      return;
+    }
+    this.webviewEditor.webview.html = html;
+    this.update();
+  }
+
+  private existsPath(path: string): boolean {
+    try {
+      return fs.existsSync(path);
+    } catch (error) {
+      console.error('[PyData Viewer] Failed to check path existence:', error);
+      return false;
+    }
+  }
+
+  private shouldValidatePathExists(path: string): boolean {
+    // If user provides a command name like "python"/"python3", let python-shell resolve it via PATH.
+    // Only validate existence when this looks like an explicit file path.
+    return path.includes('/') || path.includes('\\') || path.includes(':');
+  }
+
+  private renderSimpleMessage(messageHtml: string, color: string): void {
+    const head = `<!DOCTYPE html>
+        <html dir="ltr" mozdisallowselectionprint>
+        <head>
+        <meta charset="utf-8">
+        </head>`;
+    const tail = ['</html>'].join('\n');
+    const output = head + `<body>
+        <div id="x" style='color: ${color}; font-family: Menlo, Consolas, "Ubuntu Mono",
+        "Roboto Mono", "DejaVu Sans Mono",
+        monospace'>${messageHtml}</div></body>` + tail;
+    this.webviewEditor.webview.html = output;
+    this.update();
+  }
+
+  private async resolvePythonPath(
+    resource: vscode.Uri,
+    workspacePath: string
+  ): Promise<PythonPathResolutionResult> {
+    const configuredPythonPath = (getOption('vscode-pydata-viewer.pythonPath') as string | undefined) ?? 'default';
+    const usePythonExtensionInterpreter =
+      (getOption('vscode-pydata-viewer.usePythonExtensionInterpreter') as boolean | undefined) ?? true;
+    const pythonExtensionPath = usePythonExtensionInterpreter
+      ? await this.interpreterService.getActiveInterpreterPath(resource)
+      : undefined;
+
+    return resolvePythonPathPriority({
+      configuredPythonPath,
+      workspacePath,
+      usePythonExtensionInterpreter,
+      pythonExtensionPath,
+      fallbackPythonPath: PythonShell.defaultPythonPath,
+    });
   }
 
   public static suffixToType(suffix: string) {

@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 import { PyDataPreview } from './pydataPreview';
+import { Resource } from '@vscode/python-extension';
+import { PythonInterpreterService } from './pythonInterpreter';
 
 export class PyDataCustomProvider implements vscode.CustomReadonlyEditorProvider {
   public static readonly viewType = 'pydata.preview';
@@ -8,7 +10,8 @@ export class PyDataCustomProvider implements vscode.CustomReadonlyEditorProvider
   private _activePreview: PyDataPreview | undefined;
 
   constructor(private readonly context: vscode.ExtensionContext,
-    private readonly extensionRoot: vscode.Uri) { }
+    private readonly extensionRoot: vscode.Uri,
+    private readonly interpreterService: PythonInterpreterService) { }
 
   public openCustomDocument(uri: vscode.Uri): vscode.CustomDocument {
     return { uri, dispose: (): void => { } };
@@ -22,7 +25,8 @@ export class PyDataCustomProvider implements vscode.CustomReadonlyEditorProvider
       this.context,
       this.extensionRoot,
       document.uri,
-      webviewEditor
+      webviewEditor,
+      this.interpreterService
     );
     this._previews.add(preview);
     this.setActivePreview(preview);
@@ -52,5 +56,23 @@ export class PyDataCustomProvider implements vscode.CustomReadonlyEditorProvider
     if (this._activePreview) {
       this._activePreview.toggleTruncation();
     }
+  }
+
+  public reloadAllPreviews(resource?: Resource): void {
+    for (const preview of this._previews) {
+      if (resource && !this.isResourceMatch(preview, resource)) {
+        continue;
+      }
+      preview.refreshFromInterpreterChange();
+    }
+  }
+
+  private isResourceMatch(preview: PyDataPreview, resource: Resource): boolean {
+    if (resource instanceof vscode.Uri) {
+      return preview.resourceUri.toString() === resource.toString();
+    }
+
+    const previewFolder = vscode.workspace.getWorkspaceFolder(preview.resourceUri);
+    return previewFolder?.uri.toString() === resource.uri.toString();
   }
 }
